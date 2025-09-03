@@ -1,6 +1,7 @@
 // app/api/instruments/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     // Build dynamic filter conditions
-    const filters: Array<Record<string, any>> = [];
+    const filters: Prisma.InstrumentWhereInput[] = [];
 
     if (search) {
       filters.push({
@@ -30,7 +31,8 @@ export async function GET(req: Request) {
       filters.push({ category });
     }
 
-    const where = filters.length > 0 ? { AND: filters } : {};
+    const where: Prisma.InstrumentWhereInput =
+      filters.length > 0 ? { AND: filters } : {};
 
     // Fetch instruments with filter, pagination and ordering
     const instruments = await db.instrument.findMany({

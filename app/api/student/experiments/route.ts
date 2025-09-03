@@ -1,6 +1,6 @@
-
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -14,21 +14,21 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     // Build dynamic filter conditions
-    const filters: Array<Record<string, any>> = [];
+    const filters: Prisma.ExperimentWhereInput[] = [];
 
     if (search) {
       filters.push({
-        name: {
+        title: {
           contains: search,
           mode: "insensitive",
         },
       });
     }
 
+    const where: Prisma.ExperimentWhereInput =
+      filters.length > 0 ? { AND: filters } : {};
 
-    const where = filters.length > 0 ? { AND: filters } : {};
-
-    // Fetch instruments with filter, pagination and ordering
+    // Fetch experiments with filter, pagination and ordering
     const experiments = await db.experiment.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -40,14 +40,14 @@ export async function GET(req: Request) {
     const total = await db.experiment.count({ where });
 
     return NextResponse.json({
-     experiments,
+      experiments,
       page,
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Failed to fetch instruments" },
+      { error: "Failed to fetch experiments" },
       { status: 500 }
     );
   }

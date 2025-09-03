@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params; // <-- await because it's a Promise
+    const { id } = context.params; // no await needed
 
     const experiment = await db.experiment.findUnique({
       where: { id },
@@ -25,7 +25,7 @@ export async function GET(
     }
 
     return NextResponse.json(experiment);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching experiment:", error);
     return NextResponse.json(
       { error: "Failed to fetch experiment" },

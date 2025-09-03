@@ -2,26 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  // 🔑 Auth
+async function verifyAuth(req: NextRequest) {
   try {
     const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return { error: "Unauthorized", status: 401 };
     }
 
     try {
       jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
+      return null; // valid
     } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+      return { error: "Invalid token", status: 403 };
     }
-  } catch (err) {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
+  } catch {
+    return { error: "Auth check failed", status: 500 };
   }
+}
 
-  // 🔑 Protected logic
+// GET instrument by id
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+
+  const auth = await verifyAuth(req);
+  if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
-    const instrument = await db.instrument.findUnique({ where: { id: params.id } });
+    const instrument = await db.instrument.findUnique({ where: { id } });
     if (!instrument) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -31,28 +41,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  // 🔑 Auth
-  try {
-    const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+// UPDATE instrument
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-    try {
-      jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
-    }
-  } catch (err) {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
-  }
+  const auth = await verifyAuth(req);
+  if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  // 🔑 Protected logic
   try {
     const data = await req.json();
     const updated = await db.instrument.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
     return NextResponse.json(updated);
@@ -61,26 +63,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  // 🔑 Auth
-  try {
-    const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+// DELETE instrument
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-    try {
-      jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
-    }
-  } catch (err) {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
-  }
+  const auth = await verifyAuth(req);
+  if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  // 🔑 Protected logic
   try {
-    await db.instrument.delete({ where: { id: params.id } });
+    await db.instrument.delete({ where: { id } });
     return NextResponse.json({ message: "Instrument deleted successfully" });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete instrument" }, { status: 500 });

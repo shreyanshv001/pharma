@@ -11,6 +11,11 @@ import { Navigation, Pagination } from "swiper/modules";
 import YouTubePlayer from "@/components/YoutubePlayer";
 import { Experiment } from "@prisma/client";
 
+// interface Experiment {
+//   id: string;
+//   name: string;
+// }
+
 interface Instrument {
   id: string;
   name: string;
@@ -25,7 +30,7 @@ interface Instrument {
   specifications?: string;
   imageUrls?: string[];
   videoUrl?: string;
-  experiments?: Experiment[];
+  experiments?: {experiment:Experiment}[];
 }
 
 const CollapsibleSection = ({
@@ -101,14 +106,15 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
     if (!instrument?.imageUrls) return;
     setLightboxIndex(
       (prev) =>
-        (prev === 0 ? instrument.imageUrls.length - 1 : prev - 1)
+        (prev === 0 ? instrument!.imageUrls!.length - 1 : prev - 1)
     );
   };
 
   const handleNext = () => {
     if (!instrument?.imageUrls) return;
     setLightboxIndex(
-      (prev) => (prev + 1) % instrument.imageUrls.length
+      (prev) =>
+        (prev === 0 ? instrument!.imageUrls!.length - 1 : prev - 1)
     );
   };
 

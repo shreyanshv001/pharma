@@ -3,7 +3,12 @@ import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
 // GET a single experiment by id
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+
   // 🔑 Auth
   try {
     const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
@@ -22,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // 🔑 Protected logic
   try {
     const experiment = await db.experiment.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!experiment) {
@@ -37,7 +42,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // UPDATE an experiment
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+
   // 🔑 Auth
   try {
     const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
@@ -57,7 +67,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const data = await req.json();
     const updated = await db.experiment.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
     return NextResponse.json(updated);
@@ -68,7 +78,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE an experiment
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+
   // 🔑 Auth
   try {
     const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
@@ -86,7 +101,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   // 🔑 Protected logic
   try {
-    await db.experiment.delete({ where: { id: params.id } });
+    await db.experiment.delete({ where: { id } });
     return NextResponse.json({ message: "Experiment deleted successfully" });
   } catch (error) {
     console.error("Delete experiment error:", error);

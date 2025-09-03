@@ -1,0 +1,329 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import JoditEditor from "jodit-react";
+
+export default function AddInstrumentPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Form fields
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [discription, setDiscription] = useState("");
+  const [principle, setPrinciple] = useState("");
+  const [sop, setSop] = useState("");
+  const [ichGuideline, setIchGuideline] = useState("");
+  const [procedure, setProcedure] = useState("");
+  const [advantages, setAdvantages] = useState("");
+  const [limitations, setLimitations] = useState("");
+  const [specifications, setSpecifications] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+
+  const categoryOptions = [
+    "PHARMACEUTIC",
+    "PHARMACOGNOSY",
+    "PHARMACOLOGY",
+    "PHARMACEUTICAL_CHEMISTRY",
+  ];
+
+  const editorRef = useRef(null);
+  const config = {
+    readonly: false,
+    height: 300,
+    placeholder: "Write here...",
+    toolbarAdaptive: false,
+    toolbarSticky: false,
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImages([...images, ...Array.from(e.target.files)]);
+    }
+  };
+
+  const moveImage = (index: number, direction: "up" | "down") => {
+    const newImages = [...images];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newImages.length) return;
+
+    [newImages[index], newImages[targetIndex]] = [
+      newImages[targetIndex],
+      newImages[index],
+    ];
+
+    setImages(newImages);
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("category", category);
+      formData.append("discription", discription);
+      formData.append("principle", principle);
+      formData.append("sop", sop);
+      formData.append("ichGuideline", ichGuideline);
+      formData.append("procedure", procedure);
+      formData.append("advantages", advantages);
+      formData.append("limitations", limitations);
+      formData.append("specifications", specifications);
+      formData.append("videoUrl", videoUrl);
+      images.forEach((file) => formData.append("images", file));
+
+      const response = await fetch("/api/admin/add-instruments", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to add instrument");
+      } else {
+        setSuccess("Instrument added successfully!");
+        setTimeout(() => router.push("/admin/dashboard"), 1500);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#101A23] flex flex-col items-center px-4 py-8">
+      <div className="w-full max-w-3xl bg-[#182634] rounded-lg p-6 sm:p-8 shadow-md">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#E7EDF4] mb-6 text-center">
+          Add New Instrument
+        </h1>
+
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-3 mb-4">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-3 mb-4">
+            <p className="text-green-400 text-sm">{success}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
+          <input
+            type="text"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] placeholder:text-[#6286A9] px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#6286A9]"
+          />
+
+          {/* Category */}
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#6286A9]"
+          >
+            <option value="" disabled>
+              Select Category
+            </option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+
+          {/* Discription */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Discription</label>
+            <JoditEditor
+              
+              value={discription}
+              onChange={(newContent) => setDiscription(newContent)}
+             
+            />
+          </div>
+
+          {/* Principle */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Principle</label>
+            <JoditEditor
+              
+              value={principle}
+              onChange={(newContent) => setPrinciple(newContent)}
+             
+            />
+          </div>
+
+          {/* SOP */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">SOP</label>
+            <JoditEditor
+              
+              value={sop}
+              onChange={(newContent) => setSop(newContent)}
+             
+            />
+          </div>
+
+          {/* ICH Guidelines */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">ICH Guidelines</label>
+            <JoditEditor
+              
+              value={ichGuideline}
+              onChange={(newContent) => setIchGuideline(newContent)}
+            
+            />
+          </div>
+
+          {/* Procedure */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Procedure</label>
+            <JoditEditor
+              
+              value={procedure}
+              onChange={(newContent) => setProcedure(newContent)}
+          
+            />
+          </div>
+
+          {/* Advantages */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Advantages</label>
+            <JoditEditor
+              
+              value={advantages}
+              onChange={(newContent) => setAdvantages(newContent)}
+          
+            />
+          </div>
+
+          {/* Limitations */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Limitations</label>
+            <JoditEditor
+              
+              value={limitations}
+              onChange={(newContent) => setLimitations(newContent)}
+      
+            />
+          </div>
+
+          {/* Specifications */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Specifications</label>
+            <JoditEditor
+              
+              value={specifications}
+              onChange={(newContent) => setSpecifications(newContent)}
+     
+            />
+          </div>
+
+          {/* Video */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">YouTube Video ID</label>
+            <input
+              type="text"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="e.g., dQw4w9WgXcQ"
+              className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] placeholder:text-[#6286A9] px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#6286A9]"
+            />
+          </div>
+
+          {/* Images */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Images (in order)</label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full text-[#E7EDF4]"
+            />
+
+            {/* Preview Thumbnails with ordering */}
+            {images.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {images.map((file, index) => (
+                  <div
+                    key={index}
+                    className="relative bg-[#0D141C] rounded-lg overflow-hidden shadow-md border border-[#2a3a4a]"
+                  >
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, "up")}
+                        disabled={index === 0}
+                        className="bg-black/50 text-white text-xs px-2 py-1 rounded disabled:opacity-30"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, "down")}
+                        disabled={index === images.length - 1}
+                        className="bg-black/50 text-white text-xs px-2 py-1 rounded disabled:opacity-30"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="bg-red-600 text-white text-xs px-2 py-1 rounded"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <p className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-2 py-0.5 rounded">
+                      {index + 1}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] font-semibold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Adding..." : "Add Instrument"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

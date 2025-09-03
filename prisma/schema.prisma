@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+model Instrument {
+  id             String   @id @default(cuid())
+  name           String   // Standard/common name
+  imageUrls      String[] // Diagram / image
+  category       Category  // e.g., Analytical, Measuring...
+  discription    String?  // Key parts/components
+  principle      String?  // Principle of working
+  sop            String?  // SOP
+  ichGuideline   String?  // ICH guideline
+  procedure      String?  // Working procedure
+  advantages     String?  // Advantages
+  limitations    String?  // Limitations / Precautions
+  specifications String?  // Optional: specs like range, accuracy
+  videoUrl       String?  // Demo video
+
+  experiments ExperimentOnInstrument[]
+  
+  createdAt      DateTime @default(now())
+}
+
+enum Category {
+  PHARMACEUTIC
+  PHARMACOGNOSY
+  PHARMACOLOGY
+  PHARMACEUTICAL_CHEMISTRY
+}
+
+model Experiment {
+  id          String       @id @default(cuid())
+  title       String
+  objective   String?
+  materials   String?
+  procedure   String?
+  observation String?
+  result      String?
+  discussion  String?
+  conclusion  String?
+  videoUrl       String?  // Demo video
+  // relation
+  instruments   ExperimentOnInstrument[]
+
+  createdAt   DateTime @default(now())
+}
+
+
+model ExperimentOnInstrument {
+  experiment   Experiment @relation(fields: [experimentId], references: [id])
+  experimentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id])
+  instrumentId String
+
+  @@id([experimentId, instrumentId])
+}

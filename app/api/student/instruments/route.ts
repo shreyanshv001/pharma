@@ -1,4 +1,3 @@
-// app/api/instruments/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
@@ -10,12 +9,10 @@ export async function GET(req: Request) {
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
 
-    // For pagination
-    const page = parseInt(searchParams.get("page") || "1"); // default page = 1
-    const limit = 10; // number of items per page
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = 10;
     const skip = (page - 1) * limit;
 
-    // Build dynamic filter conditions
     const filters: Prisma.InstrumentWhereInput[] = [];
 
     if (search) {
@@ -34,7 +31,6 @@ export async function GET(req: Request) {
     const where: Prisma.InstrumentWhereInput =
       filters.length > 0 ? { AND: filters } : {};
 
-    // Fetch instruments with filter, pagination and ordering
     const instruments = await db.instrument.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -42,7 +38,6 @@ export async function GET(req: Request) {
       take: limit,
     });
 
-    // Get total count for pagination controls
     const total = await db.instrument.count({ where });
 
     return NextResponse.json({
@@ -50,8 +45,12 @@ export async function GET(req: Request) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching instruments:", error.message);
+    } else {
+      console.error("Error fetching instruments:", error);
+    }
     return NextResponse.json(
       { error: "Failed to fetch instruments" },
       { status: 500 }

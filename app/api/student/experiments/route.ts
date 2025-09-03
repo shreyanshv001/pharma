@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
     // For pagination
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = 10; // number of items per page
+    const limit = 10;
     const skip = (page - 1) * limit;
 
     // Build dynamic filter conditions
@@ -36,7 +36,6 @@ export async function GET(req: Request) {
       take: limit,
     });
 
-    // Get total count for pagination controls
     const total = await db.experiment.count({ where });
 
     return NextResponse.json({
@@ -44,8 +43,12 @@ export async function GET(req: Request) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching experiments:", error.message);
+    } else {
+      console.error("Error fetching experiments:", error);
+    }
     return NextResponse.json(
       { error: "Failed to fetch experiments" },
       { status: 500 }

@@ -1,7 +1,7 @@
 import InstrumentDetailClient from "./InstrumentDetailClient";
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  // Now use the id as needed
+// In app/experiment/[id]/page.tsx
+export default async function Page(props: PageProps<'/experiment/[id]'>) {
+  const { id } = await props.params;
   return <InstrumentDetailClient instrumentId={id} />;
 }

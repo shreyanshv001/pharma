@@ -27,7 +27,13 @@ interface Instrument {
   experiments?: { experiment: Experiment }[];
 }
 
-const CollapsibleSection = ({ title, content, defaultOpen = true }: { title: string; content?: string; defaultOpen?: boolean }) => {
+interface CollapsibleSectionProps {
+  title: string;
+  content?: string;
+  defaultOpen?: boolean;
+}
+
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, content, defaultOpen = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   if (!content) return null;
@@ -48,7 +54,13 @@ const CollapsibleSection = ({ title, content, defaultOpen = true }: { title: str
   );
 };
 
-export default function InstrumentDetail({ params }: { params: { id: string } }) {
+interface InstrumentDetailProps {
+  params: {
+    id: string;
+  };
+}
+
+const InstrumentDetail: React.FC<InstrumentDetailProps> = ({ params }) => {
   const [instrument, setInstrument] = useState<Instrument | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -59,10 +71,9 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
     const fetchInstrument = async () => {
       try {
         const response = await fetch(`/api/student/instruments/${params.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setInstrument(data);
-        }
+        if (!response.ok) throw new Error("Failed to fetch instrument");
+        const data: Instrument = await response.json();
+        setInstrument(data);
       } catch (error) {
         console.error("Error fetching instrument:", error);
       } finally {
@@ -82,7 +93,7 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
     setLightboxIndex(prev => (prev === instrument.imageUrls!.length - 1 ? 0 : prev + 1));
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
         <div className="text-center">
@@ -91,18 +102,18 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
         </div>
       </div>
     );
+  }
 
-  if (!instrument)
+  if (!instrument) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#E7EDF4] mb-4">Instrument Not Found</h1>
-          <Link href="/" className="text-[#6286A9] hover:text-[#0D141C]">
-            ← Back to Instruments
-          </Link>
+          <Link href="/" className="text-[#6286A9] hover:text-[#0D141C]">← Back to Instruments</Link>
         </div>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-[#101A23] pb-32">
@@ -118,13 +129,9 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
       )}
 
       {/* Carousel */}
-      {instrument.imageUrls && instrument.imageUrls.length > 0 && (
+      {instrument.imageUrls?.length ? (
         <div className="px-6 relative group py-6">
-          <Swiper
-            modules={[]}
-            spaceBetween={12}
-            slidesPerView={1}
-          >
+          <Swiper modules={[]} spaceBetween={12} slidesPerView={1}>
             {instrument.imageUrls.map((url, index) => (
               <SwiperSlide key={index}>
                 <div
@@ -134,17 +141,13 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
                     setIsLightboxOpen(true);
                   }}
                 >
-                  <img
-                    src={url}
-                    alt={`${instrument.name} ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
+                  <img src={url} alt={`${instrument.name} ${index + 1}`} className="absolute inset-0 w-full h-full object-contain" />
                 </div>
               </SwiperSlide>
             ))}
           </Swiper>
         </div>
-      )}
+      ) : null}
 
       {/* Lightbox */}
       {isLightboxOpen && instrument.imageUrls && (
@@ -153,9 +156,9 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
           onClick={() => setIsLightboxOpen(false)}
         >
           <button onClick={() => setIsLightboxOpen(false)} className="absolute top-6 right-6 text-white text-3xl font-bold hover:text-red-500">&times;</button>
-          <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} className="absolute left-6 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-400 select-none">&#10094;</button>
-          <button onClick={(e) => { e.stopPropagation(); handleNext(); }} className="absolute right-6 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-400 select-none">&#10095;</button>
-          <img src={instrument.imageUrls[lightboxIndex]} alt={`${instrument.name} large view`} className="max-h-[90%] max-w-[90%] object-contain" onClick={(e) => e.stopPropagation()} />
+          <button onClick={e => { e.stopPropagation(); handlePrev(); }} className="absolute left-6 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-400 select-none">&#10094;</button>
+          <button onClick={e => { e.stopPropagation(); handleNext(); }} className="absolute right-6 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-400 select-none">&#10095;</button>
+          <img src={instrument.imageUrls[lightboxIndex]} alt={`${instrument.name} large view`} className="max-h-[90%] max-w-[90%] object-contain" onClick={e => e.stopPropagation()} />
         </div>
       )}
 
@@ -189,32 +192,27 @@ export default function InstrumentDetail({ params }: { params: { id: string } })
           </div>
         )}
 
-        {instrument.experiments && instrument.experiments.length > 0 && (
+        {instrument.experiments?.length ? (
           <div className="bg-[#182634] rounded-xl shadow overflow-hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="w-full flex items-center justify-between p-4 text-left bg-[#0D141C] hover:bg-[#1f2d3a] transition"
-            >
+            <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-4 text-left bg-[#0D141C] hover:bg-[#1f2d3a] transition">
               <h3 className="text-lg font-semibold text-[#6286A9]">Experiments</h3>
               <i className={`ri-arrow-down-s-line text-xl text-[#6286A9] transition-transform ${isOpen ? "rotate-180" : ""}`}></i>
             </button>
             <div className={`transition-all duration-300 ease-in-out ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
               <div className="p-4 space-y-2">
-                {instrument.experiments.map((relation) => (
-                  <Link
-                    key={relation.experiment.id}
-                    href={`/experiment/${relation.experiment.id}`}
-                    className="block bg-[#182634] capitalize text-[#E7EDF4] hover:text-[#6286A9] px-3 py-2 rounded-lg border border-[#2c3b4d] transition"
-                  >
+                {instrument.experiments.map(rel => (
+                  <Link key={rel.experiment.id} href={`/experiment/${rel.experiment.id}`} className="block bg-[#182634] capitalize text-[#E7EDF4] hover:text-[#6286A9] px-3 py-2 rounded-lg border border-[#2c3b4d] transition">
                     <i className="ri-flask-fill mr-2"></i>
-                    <span className="capitalize text-[#e7edf4de]">{relation.experiment.title}</span>
+                    <span className="capitalize text-[#e7edf4de]">{rel.experiment.title}</span>
                   </Link>
                 ))}
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
-}
+};
+
+export default InstrumentDetail;

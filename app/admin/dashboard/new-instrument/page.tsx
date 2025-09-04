@@ -2,7 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import JoditEditor from "jodit-react";
+import dynamic from "next/dynamic";
+
+// Dynamically import JoditEditor to prevent SSR issues
+const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function AddInstrumentPage() {
   const router = useRouter();
@@ -156,93 +159,27 @@ export default function AddInstrumentPage() {
             ))}
           </select>
 
-          {/* Discription */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Discription</label>
-            <JoditEditor
-              
-              value={discription}
-              onChange={(newContent) => setDiscription(newContent)}
-             
-            />
-          </div>
-
-          {/* Principle */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Principle</label>
-            <JoditEditor
-              
-              value={principle}
-              onChange={(newContent) => setPrinciple(newContent)}
-             
-            />
-          </div>
-
-          {/* SOP */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">SOP</label>
-            <JoditEditor
-              
-              value={sop}
-              onChange={(newContent) => setSop(newContent)}
-             
-            />
-          </div>
-
-          {/* ICH Guidelines */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">ICH Guidelines</label>
-            <JoditEditor
-              
-              value={ichGuideline}
-              onChange={(newContent) => setIchGuideline(newContent)}
-            
-            />
-          </div>
-
-          {/* Procedure */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Procedure</label>
-            <JoditEditor
-              
-              value={procedure}
-              onChange={(newContent) => setProcedure(newContent)}
-          
-            />
-          </div>
-
-          {/* Advantages */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Advantages</label>
-            <JoditEditor
-              
-              value={advantages}
-              onChange={(newContent) => setAdvantages(newContent)}
-          
-            />
-          </div>
-
-          {/* Limitations */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Limitations</label>
-            <JoditEditor
-              
-              value={limitations}
-              onChange={(newContent) => setLimitations(newContent)}
-      
-            />
-          </div>
-
-          {/* Specifications */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Specifications</label>
-            <JoditEditor
-              
-              value={specifications}
-              onChange={(newContent) => setSpecifications(newContent)}
-     
-            />
-          </div>
+          {/* Rich text fields using JoditEditor */}
+          {[
+            { label: "Discription", value: discription, setter: setDiscription },
+            { label: "Principle", value: principle, setter: setPrinciple },
+            { label: "SOP", value: sop, setter: setSop },
+            { label: "ICH Guidelines", value: ichGuideline, setter: setIchGuideline },
+            { label: "Procedure", value: procedure, setter: setProcedure },
+            { label: "Advantages", value: advantages, setter: setAdvantages },
+            { label: "Limitations", value: limitations, setter: setLimitations },
+            { label: "Specifications", value: specifications, setter: setSpecifications },
+          ].map((field, idx) => (
+            <div key={idx}>
+              <label className="block text-[#E7EDF4] mb-1">{field.label}</label>
+              <JoditEditor
+                ref={editorRef}
+                value={field.value}
+                config={config}
+                onChange={field.setter}
+              />
+            </div>
+          ))}
 
           {/* Video */}
           <div>
@@ -266,8 +203,6 @@ export default function AddInstrumentPage() {
               onChange={handleImageUpload}
               className="w-full text-[#E7EDF4]"
             />
-
-            {/* Preview Thumbnails with ordering */}
             {images.length > 0 && (
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {images.map((file, index) => (

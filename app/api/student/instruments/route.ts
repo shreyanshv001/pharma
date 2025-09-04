@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Category, Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     }
 
     if (category && category !== "") {
-      filters.push({ category });
+      filters.push({ category: category as Category });
     }
 
     const where: Prisma.InstrumentWhereInput =

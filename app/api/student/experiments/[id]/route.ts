@@ -3,11 +3,11 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = context.params; // no await needed
+  const { id } = await context.params; // 👈 await required
 
+  try {
     const experiment = await db.experiment.findUnique({
       where: { id },
       include: {

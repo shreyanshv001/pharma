@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import YouTubePlayer from "@/components/YoutubePlayer";
 
@@ -66,15 +66,12 @@ const CollapsibleSection = ({
   );
 };
 
-export default function ExperimentDetail({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function ExperimentDetail() {
   const [experiment, setExperiment] = useState<Experiment | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
   const router = useRouter();
+  const params = useParams();
 
   useEffect(() => {
     const fetchExperiment = async () => {

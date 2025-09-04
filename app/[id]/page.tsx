@@ -1,7 +1,8 @@
-
-
 import InstrumentDetailClient from "./InstrumentDetailClient";
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <InstrumentDetailClient instrumentId={params.id} />;
+type ParamsPromise = Promise<{ id: string }>;
+
+export default async function Page({ params }: { params: ParamsPromise }) {
+  const { id } = await params;
+  return <InstrumentDetailClient instrumentId={id} />;
 }

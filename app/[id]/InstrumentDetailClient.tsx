@@ -64,6 +64,8 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
 
   useEffect(() => {
     const fetchInstrument = async () => {
@@ -126,27 +128,60 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
 
       {/* Carousel */}
       {instrument.imageUrls?.length ? (
-        <div className="px-6 relative group py-6">
-          <Swiper modules={[]} spaceBetween={12} slidesPerView={1}>
-            {instrument.imageUrls.map((url, index) => (
-              <SwiperSlide key={index}>
-                <div
-                  className="relative w-full max-w-xs aspect-[3/4] bg-[#182634] rounded-xl overflow-hidden cursor-pointer mx-auto"
-                  onClick={() => { setLightboxIndex(index); setIsLightboxOpen(true); }}
-                >
-                  <Image
-                    src={url}
-                    alt={`${instrument.name} ${index + 1}`}
-                    fill
-                    style={{ objectFit: "contain" }}
-                    priority={index === 0}
-                  />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      ) : null}
+  <div className="px-6 relative group py-6">
+    {/* Image */}
+    <div
+      className="relative w-full max-w-xs aspect-[3/4] bg-[#182634] rounded-xl overflow-hidden cursor-pointer mx-auto"
+      onClick={() => { setLightboxIndex(currentIndex); setIsLightboxOpen(true); }}
+    >
+      <Image
+        src={instrument.imageUrls[currentIndex]}
+        alt={`${instrument.name} ${currentIndex + 1}`}
+        fill
+        style={{ objectFit: "contain" }}
+        priority
+      />
+    </div>
+
+    {/* Prev button */}
+    <button
+      onClick={() =>
+        setCurrentIndex((prev) =>
+          prev === 0 ? instrument.imageUrls!.length - 1 : prev - 1
+        )
+      }
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
+    >
+      &#10094;
+    </button>
+
+    {/* Next button */}
+    <button
+      onClick={() =>
+        setCurrentIndex((prev) =>
+          prev === instrument.imageUrls!.length - 1 ? 0 : prev + 1
+        )
+      }
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
+    >
+      &#10095;
+    </button>
+
+    {/* Pagination dots */}
+    <div className="flex justify-center mt-4 space-x-2">
+      {instrument.imageUrls.map((_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentIndex(index)}
+          className={`w-3 h-3 rounded-full ${
+            index === currentIndex ? "bg-[#6286A9]" : "bg-gray-500"
+          }`}
+        />
+      ))}
+    </div>
+  </div>
+) : null}
+
 
       {/* Lightbox */}
       {isLightboxOpen && instrument.imageUrls && (

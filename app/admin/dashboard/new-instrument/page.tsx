@@ -159,27 +159,46 @@ export default function AddInstrumentPage() {
             ))}
           </select>
 
-          {/* Rich text fields using JoditEditor */}
-          {[
-            { label: "Discription", value: discription, setter: setDiscription },
-            { label: "Principle", value: principle, setter: setPrinciple },
-            { label: "SOP", value: sop, setter: setSop },
-            { label: "ICH Guidelines", value: ichGuideline, setter: setIchGuideline },
-            { label: "Procedure", value: procedure, setter: setProcedure },
-            { label: "Advantages", value: advantages, setter: setAdvantages },
-            { label: "Limitations", value: limitations, setter: setLimitations },
-            { label: "Specifications", value: specifications, setter: setSpecifications },
-          ].map((field, idx) => (
-            <div key={idx}>
-              <label className="block text-[#E7EDF4] mb-1">{field.label}</label>
-              <JoditEditor
-                ref={editorRef}
-                value={field.value}
-                config={config}
-                onChange={field.setter}
-              />
+          <div>
+              <label className="block text-[#E7EDF4] mb-1">Description</label>
+              <JoditEditor value={discription} onChange={setDiscription} />
             </div>
-          ))}
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">Principle</label>
+              <JoditEditor value={principle} onChange={setPrinciple} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">SOP</label>
+              <JoditEditor value={sop} onChange={setSop} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">ICH Guideline</label>
+              <JoditEditor value={ichGuideline} onChange={setIchGuideline} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">Procedure</label>
+              <JoditEditor value={procedure} onChange={setProcedure} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">Advantages</label>
+              <JoditEditor value={advantages} onChange={setAdvantages} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">Limitations</label>
+              <JoditEditor value={limitations} onChange={setLimitations} />
+            </div>
+
+            <div>
+              <label className="block text-[#E7EDF4] mb-1">Specifications</label>
+              <JoditEditor value={specifications} onChange={setSpecifications} />
+            </div>
+
 
           {/* Video */}
           <div>

@@ -36,7 +36,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <footer className="fixed  bottom-0 border-t-2 border-t-[#6286a915] left-0 w-full bg-[#101A23] text-[#6286A9] flex justify-around items-center py-6 shadow-lg">
+    <footer className="fixed lg:hidden  bottom-0 border-t-2 border-t-[#6286a915] left-0 w-full bg-[#101A23] text-[#6286A9] flex justify-around items-center py-6 shadow-lg">
       {navItems.map((item) => {
         // For home tab, check if pathname is "/" or if it's an instrument detail page (single segment path that's not another nav item)
         const isHomeActive = item.href === "/" && (

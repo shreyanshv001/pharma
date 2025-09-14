@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -22,7 +22,85 @@ export default function AddExperimentPage() {
   const [result, setResult] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
-  
+  const editor = useRef(null);
+    const config = {
+      readonly: false,
+      height: 200,
+      placeholder: "Describe your question here...",
+      theme: "dark",
+      buttons: [
+        'bold', 
+        'italic', 
+        'underline', 
+        'ul', 
+        'ol',
+        'paragraph', // Add paragraph dropdown (contains alignment options)
+        'align', // Explicit alignment buttons
+        'hr', // Horizontal rule/line
+        'link',
+        'image',
+        'table',
+        'undo', 
+        'redo'
+      ],
+      // Same buttons for all screen sizes
+      buttonsMD: [
+        'bold', 
+        'italic', 
+        'underline', 
+        'ul', 
+        'ol',
+        'paragraph', // Add paragraph dropdown (contains alignment options)
+        'align', // Explicit alignment buttons
+        'hr', // Horizontal rule/line
+        'link',
+        'image',
+        'table',
+        'undo', 
+        'redo'
+      ],
+      buttonsSM: [
+        'bold', 
+        'italic', 
+        'underline', 
+        'ul', 
+        'ol',
+        'paragraph', // Add paragraph dropdown (contains alignment options)
+        'align', // Explicit alignment buttons
+        'hr', // Horizontal rule/line
+        'link',
+        'image',
+        'table',
+        'undo', 
+        'redo'
+      ],
+      buttonsXS: [
+        'bold', 
+        'italic', 
+        'underline', 
+        'ul', 
+        'ol',
+        'paragraph', // Add paragraph dropdown (contains alignment options)
+        'align', // Explicit alignment buttons
+        'hr', // Horizontal rule/line
+        'link',
+        'image',
+        'table',
+        'undo', 
+        'redo'
+      ],
+      style: {
+        background: '#101A23',  // Dark background to match your theme
+        color: '#E5E7EB'        // Light text color
+      },
+      uploader: {
+        insertImageAsBase64URI: true
+      },
+      toolbarAdaptive: false,   // Disable toolbar adaptation to maintain same buttons
+      toolbarSticky: true,      // Keep toolbar visible when scrolling
+      allowResizeX: false,      // Prevent horizontal resizing
+      allowResizeY: true,       // Allow vertical resizing
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,31 +173,31 @@ export default function AddExperimentPage() {
           {/* Objective */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Objective</label>
-            <JoditEditor value={objective} onChange={(content) => setObjective(content)} />
+            <JoditEditor config={config} ref={editor} value={objective} onBlur={(content) => setObjective(content)} />
           </div>
 
           {/* Principle */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Principle</label>
-            <JoditEditor value={principle} onChange={(content) => setPrinciple(content)} />
+            <JoditEditor config={config} ref={editor} value={principle} onBlur={(content) => setPrinciple(content)} />
           </div>
 
           {/* Procedure */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Procedure</label>
-            <JoditEditor value={procedure} onChange={(content) => setProcedure(content)} />
+            <JoditEditor config={config} ref={editor} value={procedure} onBlur={(content) => setProcedure(content)} />
           </div>
 
           {/* Observation */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Observation</label>
-            <JoditEditor value={observation} onChange={(content) => setObservation(content)} />
+            <JoditEditor config={config} ref={editor} value={observation} onBlur={(content) => setObservation(content)} />
           </div>
 
           {/* Result */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Result</label>
-            <JoditEditor value={result} onChange={(content) => setResult(content)} />
+            <JoditEditor config={config} ref={editor} value={result} onBlur={(content) => setResult(content)} />
           </div>
 
           {/* Video */}

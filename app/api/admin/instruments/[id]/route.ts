@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import { Prisma } from '@prisma/client';
 
 async function verifyAuth(req: NextRequest) {
   try {
@@ -74,9 +75,52 @@ export async function DELETE(
   if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
-    await db.instrument.delete({ where: { id } });
+    // First check if the instrument exists
+    const instrument = await db.instrument.findUnique({
+      where: { id },
+      include: {
+        experiments: true
+      }
+    });
+
+    if (!instrument) {
+      return NextResponse.json({ error: "Instrument not found" }, { status: 404 });
+    }
+
+    // Delete in a transaction to ensure data consistency
+    await db.$transaction(async (tx) => {
+      // First delete all experiment-instrument relationships
+      await tx.experimentOnInstrument.deleteMany({
+        where: {
+          instrumentId: id
+        }
+      });
+
+      // Then delete the instrument
+      await tx.instrument.delete({
+        where: { id }
+      });
+    });
+
     return NextResponse.json({ message: "Instrument deleted successfully" });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete instrument" }, { status: 500 });
+    console.error("Delete instrument error:", error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json({ error: "Instrument not found" }, { status: 404 });
+      }
+      if (error.code === "P2003") {
+        return NextResponse.json({ 
+          error: "Cannot delete instrument because it is being used by one or more experiments. Please remove the instrument from all experiments first.",
+          details: error.message 
+        }, { status: 409 });
+      }
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to delete instrument" }, 
+      { status: 500 }
+    );
   }
 }

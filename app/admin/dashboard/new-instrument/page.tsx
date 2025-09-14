@@ -34,13 +34,84 @@ export default function AddInstrumentPage() {
     "PHARMACEUTICAL_CHEMISTRY",
   ];
 
-  const editorRef = useRef(null);
+  const editor = useRef(null);
   const config = {
     readonly: false,
-    height: 300,
-    placeholder: "Write here...",
-    toolbarAdaptive: false,
-    toolbarSticky: false,
+    height: 200,
+    placeholder: "Describe your question here...",
+    theme: "dark",
+    buttons: [
+      'bold', 
+      'italic', 
+      'underline', 
+      'ul', 
+      'ol',
+      'paragraph', // Add paragraph dropdown (contains alignment options)
+      'align', // Explicit alignment buttons
+      'hr', // Horizontal rule/line
+      'link',
+      'image',
+      'table',
+      'undo', 
+      'redo'
+    ],
+    // Same buttons for all screen sizes
+    buttonsMD: [
+      'bold', 
+      'italic', 
+      'underline', 
+      'ul', 
+      'ol',
+      'paragraph', // Add paragraph dropdown (contains alignment options)
+      'align', // Explicit alignment buttons
+      'hr', // Horizontal rule/line
+      'link',
+      'image',
+      'table',
+      'undo', 
+      'redo'
+    ],
+    buttonsSM: [
+      'bold', 
+      'italic', 
+      'underline', 
+      'ul', 
+      'ol',
+      'paragraph', // Add paragraph dropdown (contains alignment options)
+      'align', // Explicit alignment buttons
+      'hr', // Horizontal rule/line
+      'link',
+      'image',
+      'table',
+      'undo', 
+      'redo'
+    ],
+    buttonsXS: [
+      'bold', 
+      'italic', 
+      'underline', 
+      'ul', 
+      'ol',
+      'paragraph', // Add paragraph dropdown (contains alignment options)
+      'align', // Explicit alignment buttons
+      'hr', // Horizontal rule/line
+      'link',
+      'image',
+      'table',
+      'undo', 
+      'redo'
+    ],
+    style: {
+      background: '#101A23',  // Dark background to match your theme
+      color: '#E5E7EB'        // Light text color
+    },
+    uploader: {
+      insertImageAsBase64URI: true
+    },
+    toolbarAdaptive: false,   // Disable toolbar adaptation to maintain same buttons
+    toolbarSticky: true,      // Keep toolbar visible when scrolling
+    allowResizeX: false,      // Prevent horizontal resizing
+    allowResizeY: true,       // Allow vertical resizing
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,42 +232,42 @@ export default function AddInstrumentPage() {
 
           <div>
               <label className="block text-[#E7EDF4] mb-1">Description</label>
-              <JoditEditor value={discription} onChange={setDiscription} />
+              <JoditEditor ref={editor} config={config} value={discription} onBlur={(newContent) => setDiscription(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Principle</label>
-              <JoditEditor value={principle} onChange={setPrinciple} />
+              <JoditEditor ref={editor} config={config} value={principle} onBlur={(newContent) => setPrinciple(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">SOP</label>
-              <JoditEditor value={sop} onChange={setSop} />
+              <JoditEditor ref={editor} config={config} value={sop} onBlur={(newContent) => setSop(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">ICH Guideline</label>
-              <JoditEditor value={ichGuideline} onChange={setIchGuideline} />
+              <JoditEditor ref={editor} config={config} value={ichGuideline} onBlur={(newContent) => setIchGuideline(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Procedure</label>
-              <JoditEditor value={procedure} onChange={setProcedure} />
+              <JoditEditor ref={editor} config={config} value={procedure} onBlur={(newContent) => setProcedure(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Advantages</label>
-              <JoditEditor value={advantages} onChange={setAdvantages} />
+              <JoditEditor ref={editor} config={config} value={advantages} onBlur={(newContent) => setAdvantages(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Limitations</label>
-              <JoditEditor value={limitations} onChange={setLimitations} />
+              <JoditEditor ref={editor} config={config} value={limitations} onBlur={(newContent) => setLimitations(newContent)} />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Specifications</label>
-              <JoditEditor value={specifications} onChange={setSpecifications} />
+              <JoditEditor ref={editor} config={config} value={specifications} onBlur={(newContent) => setSpecifications(newContent)} />
             </div>
 
 

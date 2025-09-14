@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
+import { ClerkProvider } from "@clerk/nextjs";
+import ReactQueryProvider from "./providers/react-query-provider"; 
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
@@ -20,14 +22,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-inter flex flex-col min-h-screen`}>
-        {/* Page Content */}
-        <main className="flex-1 bg-gray-100">{children}</main>
-
-        {/* Bottom Navigation - Will be conditionally hidden by CSS */}
-        <BottomNav />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${inter.variable} font-inter flex flex-col min-h-screen`}>
+          {/* Wrap only here */}
+          <ReactQueryProvider>
+            <main className="flex-1 bg-gray-100">{children}</main>
+            <BottomNav />
+          </ReactQueryProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation"
 import Link from "next/link";
 
+// ---- TYPE DEFINITIONS ----
 interface Instrument {
   id: string;
   name: string;
@@ -12,78 +14,62 @@ interface Instrument {
   imageUrls?: string[];
 }
 
+interface PageData {
+  instruments: Instrument[];
+  nextCursor: string | null;
+}
+
+// ---- CATEGORY OPTIONS ----
+const categoryOptions = [
+  "ALL",
+  "PHARMACEUTIC",
+  "PHARMACOGNOSY",
+  "PHARMACOLOGY",
+  "PHARMACEUTICAL_CHEMISTRY"
+];
+
+// ---- MAIN COMPONENT ----
 export default function InstrumentsList() {
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
-
-  const categoryOptions = [
-    "ALL",
-    "PHARMACEUTIC",
-    "PHARMACOGNOSY",
-    "PHARMACOLOGY",
-    "PHARMACEUTICAL_CHEMISTRY",
-  ];
-
   const router = useRouter();
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
-  const goToInstruments = (inst: Instrument) => {
-    router.push(`${inst.id}`);
-  };
-
-  const fetchInstruments = useCallback(
-    async (pageNumber: number, searchQuery: string, categoryFilter: string) => {
-      if (pageNumber === 1) setInstruments([]);
-      setLoading(true);
-      try {
-        const categoryParam =
-          categoryFilter === "ALL"
-            ? ""
-            : `&category=${encodeURIComponent(categoryFilter)}`;
-        const res = await fetch(
-          `/api/student/instruments?search=${encodeURIComponent(
-            searchQuery
-          )}&page=${pageNumber}${categoryParam}`
-        );
-        const data = await res.json();
-        console.log(data)
-
-        if (pageNumber === 1) {
-          setInstruments(data.instruments);
-        } else {
-          setInstruments((prev) => [...prev, ...data.instruments]);
-        }
-        setTotalPages(data.totalPages);
-      } catch (err) {
-        console.error("Failed to fetch instruments:", err);
-      } finally {
-        setLoading(false);
-        setInitialLoading(false);
-      }
+  // ---- INFINITE QUERY: FETCH USING CURSOR ----
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+    isLoading,
+  } = useInfiniteQuery<PageData>({
+    queryKey: ["instruments", search, category],
+    queryFn: async ({ pageParam = "" }) => {
+      let url = `/api/student/instruments?search=${encodeURIComponent(search)}`;
+      if (category !== "ALL") url += `&category=${encodeURIComponent(category)}`;
+      if (pageParam) url += `&cursor=${encodeURIComponent(String(pageParam))}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch instruments");
+      return res.json();
     },
-    []
-  );
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: "",
+    refetchOnWindowFocus: false,
+  });
 
-  useEffect(() => {
-    setPage(1);
-    setInitialLoading(true);
-    fetchInstruments(1, search, category);
-  }, [search, category, fetchInstruments]);
 
+  // ---- MERGE PAGES ----
+  const instruments = data?.pages.flatMap(page => page.instruments) ?? [];
+
+  // ---- INFINITE SCROLL: INTERSECTION OBSERVER ----
   useEffect(() => {
-    if (loading) return;
+    if (!hasNextPage || isFetchingNextPage) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && page < totalPages) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchInstruments(nextPage, search, category);
-        }
+        if (entries[0].isIntersecting) fetchNextPage();
       },
       { threshold: 1 }
     );
@@ -91,8 +77,18 @@ export default function InstrumentsList() {
     return () => {
       if (loaderRef.current) observer.unobserve(loaderRef.current);
     };
-  }, [loading, page, totalPages, search, category, fetchInstruments]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // ---- RESET DATA ON FILTER CHANGE ----
+  useEffect(() => {
+    // React Query will refetch when queryKey ([search,category]) changes automatically.
+    // No need to manually reset.
+  }, [search, category]);
+
+  // ---- NAVIGATE TO INSTRUMENT DETAILS ----
+  const goToInstrument = (inst: Instrument) => router.push(`/instrument/${inst.id}`);
+
+  // ---- LOADING SKELETON ----
   const LoadingSkeleton = () => (
     <div className="grid gap-6 lg:grid-cols-5 lg:px-7 lg:h-72 grid-cols-2">
       {[...Array(8)].map((_, i) => (
@@ -107,189 +103,91 @@ export default function InstrumentsList() {
     </div>
   );
 
+  // ---- RENDER ----
   return (
-    <div className="px-5 pt-5 md:p-0 pb-28  bg-[#101A23] min-h-screen">
-      
-
-
-      {/* Mobile view (default) */}
-    <div className="block lg:hidden">
-    <h1 className="text-3xl font-bold text-center text-[#E7EDF4] mb-6">
-        Instruments
-      </h1>
-
-      {/* Search */}
-      <div className="relative mb-6">
-        <i className="ri-search-line absolute text-xl left-3 top-1/2 transform -translate-y-1/2 text-[#6286A9]"></i>
-        <Input
-          placeholder="Search instruments"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 bg-[#E7EDF4] text-[#6286A9] placeholder:text-[#6286A9] border-0 focus:ring-0"
-        />
+    <div className="px-5 pt-5 md:p-0 pb-28 bg-[#101A23] min-h-screen">
+      <h1 className="text-3xl font-bold block lg:hidden text-white mb-8 text-center">Instruments</h1>
+      <div className="text-white lg:pt-34 pt-5 max-w-3xl lg:block hidden mx-auto mb-6 space-y-1 text-center">
+        <div className="lg:text-4xl text-2xl font-bold ">Explore Pharmaceutical Instruments</div>
+        <div className=" max-w-3xl text-zinc-400 mt-4 ">An extensive library of instruments for pharmacy students. </div>
+        <div className="max-w-3xl text-zinc-400"> Search, learn, and master their details.</div>
       </div>
-
-      {/* Categories Row */}
-      <div className="flex gap-3 overflow-x-auto pb-3 mb-6 scrollbar-hide">
-        {categoryOptions.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
-              category === cat
-                ? "bg-[#6286A9] text-white"
-                : "bg-[#182634] text-[#E7EDF4] hover:bg-[#223243]"
-            }`}
-          >
-            {cat === "ALL" ? "All" : cat.replace(/_/g, " ")}
-          </button>
-        ))}
+      {/* --- Search & Category Filters --- */}
+      <div className="max-w-3xl mx-auto mb-8">
+        <div className="relative mb-6">
+          <i className="ri-search-line absolute text-xl left-3 top-1/2 transform -translate-y-1/2 text-[#6286A9]" />
+          <Input
+            placeholder="Search instruments"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 bg-[#E7EDF4] text-[#6286A9] placeholder:text-[#6286A9] border-0 focus:ring-0"
+          />
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-3 mb-6 scrollbar-hide">
+          {categoryOptions.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                category === cat
+                  ? "bg-[#6286A9] text-white"
+                  : "bg-[#182634] text-[#E7EDF4] hover:bg-[#223243]"
+              }`}
+            >
+              {cat === "ALL" ? "All" : cat.replace(/_/g, " ")}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* Content */}
-      {initialLoading ? (
+      {/* --- Instruments Grid --- */}
+      {isLoading ? (
         <LoadingSkeleton />
+      ) : isError ? (
+        <div className="text-center text-red-400 py-16">
+          Error loading instruments. Please try again.
+        </div>
       ) : instruments.length === 0 ? (
-        <div className="text-center text-[#E7EDF4] py-16">
-          No instruments found
-        </div>
+        <div className="text-center text-[#E7EDF4] py-16">No instruments found</div>
       ) : (
-        <>
-          <div className="grid gap-4 grid-cols-2">
-            {instruments.map((inst) => (
-              <div
-                key={inst.id}
-                onClick={() => goToInstruments(inst)}
-                className="bg-[#182634] hover:bg-[#223243] transition-colors rounded-lg shadow cursor-pointer flex flex-col"
-              >
-                {inst.imageUrls && inst.imageUrls.length > 0 ? (
-                  <div className="h-40 w-full overflow-hidden rounded-t-lg">
-                    <img
-                      src={inst.imageUrls[0]}
-                      alt={inst.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-40 w-full bg-[#2a3a4a] rounded-t-lg flex items-center justify-center text-[#6286A9]">
-                    No Image
-                  </div>
-                )}
-                <div className="p-3 text-center">
-                  <h2 className="text-sm capitalize text-[#E7EDF4] truncate">
-                    {inst.name}
-                  </h2>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Loader */}
-          {page < totalPages && (
-            <div ref={loaderRef} className="text-center py-6 text-[#E7EDF4]">
-              {loading ? "Loading more..." : "Scroll down to load more"}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-     {/* Desktop view */}
-<div className="hidden lg:block">
-  {/* example: show grid with more columns and extra UI */}
-  <div className="flex text-white p-5 px-19 bg-[#223243] justify-between items-center mb-6">
-    <div>Pharma Learn</div>
-    <div className="w-1/2">
-      <div className="relative w-full">
-        <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-[#6286A9] text-lg"></i>
-        <Input
-          placeholder="Search instruments"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 bg-[#E7EDF4] text-[#6286A9] placeholder:text-[#6286A9] border-0 focus:ring-0"
-        />
-      </div>
-    </div>
-    <div className="flex gap-14">
-      <div>Home</div>
-      <Link href={"/experiment"} >Experiment </Link>
-      <div>Q&A</div>
-      <div>Profile</div>
-    </div>
-  </div>
-
-  <div className="text-white flex flex-col mb-12 gap-6 text-center">
-    <h1 className=" text-4xl font-bold ">
-      Explore Pharmaceutical Instruments
-    </h1>
-    <div className="text-[#93A2B7] text-lg ">
-      An extensive library of instruments for pharmacy students. Search, learn,
-      and master their details.
-    </div>
-  </div>
-
-  <div className="flex justify-center gap-4 mb-8">
-    {categoryOptions.map((cat) => (
-      <button
-        key={cat}
-        onClick={() => setCategory(cat)}
-        className={`px-4 cursor-pointer py-2 rounded-xl text-sm font-medium transition-colors ${
-          category === cat
-            ? "bg-[#6286A9] text-white"
-            : "bg-[#182634] text-[#E7EDF4] hover:bg-[#223243]"
-        }`}
-      >
-        {cat === "ALL" ? "All" : cat.replace(/_/g, " ")}
-      </button>
-    ))}
-  </div>
-
-  {/* Content */}
-  {initialLoading ? (
-    <LoadingSkeleton />
-  ) : instruments.length === 0 ? (
-    <div className="text-center text-[#E7EDF4] py-16">
-      No instruments found
-    </div>
-  ) : (
-    <div className="grid gap-6 px-8 grid-cols-3 xl:grid-cols-5">
-      {instruments.map((inst) => (
-        <div
-          key={inst.id}
-          onClick={() => goToInstruments(inst)}
-          className="bg-[#182634] hover:bg-[#223243] transition-colors rounded-lg shadow cursor-pointer flex flex-col"
-        >
-          {inst.imageUrls && inst.imageUrls.length > 0 ? (
-            <div className="h-80 w-full overflow-hidden rounded-t-lg">
-              <img
-                src={inst.imageUrls[0]}
-                alt={inst.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-48 w-full bg-[#2a3a4a] rounded-t-lg flex items-center justify-center text-[#6286A9]">
-              No Image
-            </div>
-          )}
-          <div className="py-5 px-7 ">
-            <h2 className="font-bold capitalize text-xl text-[#E7EDF4] truncate">
-              {inst.name}
-            </h2>
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+          {instruments.map((inst) => (
             <div
-              className="mt-2 table-styles text-[#94A3B8] leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: inst.discription || "" }}
-            />
-            <div className="text-[#38BBF6] font-semibold mt-5 hover:text-[#38baf6af]">
-              Learn More <i className="ri-arrow-right-line"></i>
+              key={inst.id}
+              onClick={() => goToInstrument(inst)}
+              className="bg-[#182634] hover:bg-[#223243] transition-colors rounded-lg shadow cursor-pointer flex flex-col select-none"
+            >
+              {inst.imageUrls && inst.imageUrls.length > 0 ? (
+                <div className="h-40 w-full overflow-hidden rounded-t-lg">
+                  <img
+                    src={inst.imageUrls[0]}
+                    alt={inst.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="h-40 w-full bg-[#2a3a4a] rounded-t-lg flex items-center justify-center text-[#6286A9] text-sm">
+                  No Image
+                </div>
+              )}
+              <div className="p-3 text-center">
+                <h2 className="text-sm capitalize text-[#E7EDF4] truncate">
+                  {inst.name}
+                </h2>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-      ))}
-    </div>
-  )}
-</div>
-
-
+      )}
+      {/* --- Infinite Scroll Loader --- */}
+      <div ref={loaderRef} className="text-center py-6 text-[#E7EDF4]">
+        {isFetchingNextPage
+          ? "Loading more..."
+          : hasNextPage
+          ? "Scroll down to load more"
+          : instruments.length > 0
+          ? "All instruments loaded"
+          : null}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import { Prisma } from '@prisma/client';
 
 // GET a single experiment by id
 export async function GET(
@@ -101,10 +102,49 @@ export async function DELETE(
 
   // 🔑 Protected logic
   try {
-    await db.experiment.delete({ where: { id } });
+    // First check if the experiment exists
+    const experiment = await db.experiment.findUnique({
+      where: { id },
+      include: {
+        instruments: true
+      }
+    });
+
+    if (!experiment) {
+      return NextResponse.json({ error: "Experiment not found" }, { status: 404 });
+    }
+
+    // Delete in a transaction to ensure data consistency
+    await db.$transaction(async (tx) => {
+      // First delete all experiment-instrument relationships
+      await tx.experimentOnInstrument.deleteMany({
+        where: {
+          experimentId: id
+        }
+      });
+
+      // Then delete the experiment
+      await tx.experiment.delete({
+        where: { id }
+      });
+    });
+
     return NextResponse.json({ message: "Experiment deleted successfully" });
   } catch (error) {
     console.error("Delete experiment error:", error);
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json({ error: "Experiment not found" }, { status: 404 });
+      }
+      if (error.code === "P2003") {
+        return NextResponse.json({ 
+          error: "Cannot delete experiment because it has linked instruments. Please remove the instrument links first.",
+          details: error.message 
+        }, { status: 409 });
+      }
+    }
+    
     return NextResponse.json({ error: "Failed to delete experiment" }, { status: 500 });
   }
 }

@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Experiment } from "@prisma/client";
+import { useQuery } from "@tanstack/react-query";
 
 // Dynamically import browser-only components
-const Swiper = dynamic(() => import("swiper/react").then((mod) => mod.Swiper), { ssr: false });
-const SwiperSlide = dynamic(() => import("swiper/react").then((mod) => mod.SwiperSlide), { ssr: false });
 const YouTubePlayer = dynamic(() => import("@/components/YoutubePlayer"), { ssr: false });
 
 interface Instrument {
@@ -59,41 +58,39 @@ interface InstrumentDetailProps {
 }
 
 const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId }) => {
-  const [instrument, setInstrument] = useState<Instrument | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-
-  useEffect(() => {
-    const fetchInstrument = async () => {
-      try {
-        const res = await fetch(`/api/student/instruments/${instrumentId}`);
-        if (!res.ok) throw new Error("Failed to fetch instrument");
-        const data: Instrument = await res.json();
-        setInstrument(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchInstrument();
-  }, [instrumentId]);
+  // Use React Query to fetch instrument data
+  const {
+    data: instrument,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['instrument', instrumentId],
+    queryFn: async () => {
+      const res = await fetch(`/api/student/instruments/${instrumentId}`);
+      if (!res.ok) throw new Error("Failed to fetch instrument");
+      return res.json() as Promise<Instrument>;
+    },
+    staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+  });
+  console.log(instrument);
 
   const handlePrev = () => {
-    if (!instrument?.imageUrls) return;
+    if (!instrument?.imageUrls?.length) return;
     setLightboxIndex(prev => (prev === 0 ? instrument.imageUrls!.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
-    if (!instrument?.imageUrls) return;
+    if (!instrument?.imageUrls?.length) return;
     setLightboxIndex(prev => (prev === instrument.imageUrls!.length - 1 ? 0 : prev + 1));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
         <div className="text-center">
@@ -104,12 +101,28 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#101A23]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-400 mb-4">Failed to load instrument</h1>
+          <p className="text-[#E7EDF4] mb-6">There was an error loading this instrument.</p>
+          <Link href="/" className="px-4 py-2 bg-[#6286A9] text-white rounded-lg hover:bg-[#4a6b8a] transition">
+            ← Back to Instruments
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!instrument) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#E7EDF4] mb-4">Instrument Not Found</h1>
-          <Link href="/" className="text-[#6286A9] hover:text-[#0D141C]">← Back to Instruments</Link>
+          <Link href="/" className="px-4 py-2 bg-[#6286A9] text-white rounded-lg hover:bg-[#4a6b8a] transition">
+            ← Back to Instruments
+          </Link>
         </div>
       </div>
     );
@@ -128,60 +141,59 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
 
       {/* Carousel */}
       {instrument.imageUrls?.length ? (
-  <div className="px-6 relative group py-6">
-    {/* Image */}
-    <div
-      className="relative w-full max-w-xs aspect-[3/4] bg-[#182634] rounded-xl overflow-hidden cursor-pointer mx-auto"
-      onClick={() => { setLightboxIndex(currentIndex); setIsLightboxOpen(true); }}
-    >
-      <Image
-        src={instrument.imageUrls[currentIndex]}
-        alt={`${instrument.name} ${currentIndex + 1}`}
-        fill
-        style={{ objectFit: "contain" }}
-        priority
-      />
-    </div>
+        <div className="px-6 relative group py-6">
+          {/* Image */}
+          <div
+            className="relative w-full max-w-xs aspect-[3/4] bg-[#182634] rounded-xl overflow-hidden cursor-pointer mx-auto"
+            onClick={() => { setLightboxIndex(currentIndex); setIsLightboxOpen(true); }}
+          >
+            <Image
+              src={instrument.imageUrls[currentIndex]}
+              alt={`${instrument.name} ${currentIndex + 1}`}
+              fill
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          </div>
 
-    {/* Prev button */}
-    <button
-      onClick={() =>
-        setCurrentIndex((prev) =>
-          prev === 0 ? instrument.imageUrls!.length - 1 : prev - 1
-        )
-      }
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
-    >
-      &#10094;
-    </button>
+          {/* Prev button */}
+          <button
+            onClick={() =>
+              setCurrentIndex((prev) =>
+                prev === 0 ? instrument.imageUrls!.length - 1 : prev - 1
+              )
+            }
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
+          >
+            &#10094;
+          </button>
 
-    {/* Next button */}
-    <button
-      onClick={() =>
-        setCurrentIndex((prev) =>
-          prev === instrument.imageUrls!.length - 1 ? 0 : prev + 1
-        )
-      }
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
-    >
-      &#10095;
-    </button>
+          {/* Next button */}
+          <button
+            onClick={() =>
+              setCurrentIndex((prev) =>
+                prev === instrument.imageUrls!.length - 1 ? 0 : prev + 1
+              )
+            }
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white text-2xl px-2 py-1 rounded"
+          >
+            &#10095;
+          </button>
 
-    {/* Pagination dots */}
-    <div className="flex justify-center mt-4 space-x-2">
-      {instrument.imageUrls.map((_, index) => (
-        <button
-          key={index}
-          onClick={() => setCurrentIndex(index)}
-          className={`w-3 h-3 rounded-full ${
-            index === currentIndex ? "bg-[#6286A9]" : "bg-gray-500"
-          }`}
-        />
-      ))}
-    </div>
-  </div>
-) : null}
-
+          {/* Pagination dots */}
+          <div className="flex justify-center mt-4 space-x-2">
+            {instrument.imageUrls.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`w-3 h-3 rounded-full ${
+                  index === currentIndex ? "bg-[#6286A9]" : "bg-gray-500"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Lightbox */}
       {isLightboxOpen && instrument.imageUrls && (
@@ -257,7 +269,7 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
               </div>
             </div>
           </div>
-        ):null}
+        ) : null}
       </div>
     </div>
   );

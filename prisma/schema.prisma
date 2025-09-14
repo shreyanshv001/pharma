@@ -13,31 +13,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Admin {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
 }
+
 model Instrument {
   id             String   @id @default(cuid())
-  name           String   // Standard/common name
-  imageUrls      String[] // Diagram / image
-  category       Category  // e.g., Analytical, Measuring...
-  discription    String?  // Key parts/components
-  principle      String?  // Principle of working
-  sop            String?  // SOP
-  ichGuideline   String?  // ICH guideline
-  procedure      String?  // Working procedure
-  advantages     String?  // Advantages
-  limitations    String?  // Limitations / Precautions
-  specifications String?  // Optional: specs like range, accuracy
-  videoUrl       String?  // Demo video
+  name           String
+  imageUrls      String[]
+  category       Category
+  discription    String?
+  principle      String?
+  sop            String?
+  ichGuideline   String?
+  procedure      String?
+  advantages     String?
+  limitations    String?
+  specifications String?
+  videoUrl       String?
+  experiments    ExperimentOnInstrument[]
 
-  experiments ExperimentOnInstrument[]
-  
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 enum Category {
@@ -57,13 +56,11 @@ model Experiment {
   result      String?
   discussion  String?
   conclusion  String?
-  videoUrl       String?  // Demo video
-  // relation
-  instruments   ExperimentOnInstrument[]
+  videoUrl    String?
+  instruments ExperimentOnInstrument[]
 
   createdAt   DateTime @default(now())
 }
-
 
 model ExperimentOnInstrument {
   experiment   Experiment @relation(fields: [experimentId], references: [id])
@@ -72,4 +69,85 @@ model ExperimentOnInstrument {
   instrumentId String
 
   @@id([experimentId, instrumentId])
+}
+
+model User {
+  id        String    @id @default(cuid())
+  clerkId   String    @unique
+  email     String?   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime  @default(now())
+
+  questions Question[]
+  answers   Answer[]
+  comments  Comment[]
+  votes     Vote[]
+
+  @@index([clerkId])
+}
+
+model Question {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  voteSum     Int       @default(0)
+  votes       Vote[]
+  answers     Answer[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+}
+
+model Answer {
+  id          String    @id @default(cuid())
+  description String
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  question    Question  @relation(fields: [questionId], references: [id])
+  questionId  String
+  votes       Vote[]
+  comments    Comment[]
+  voteSum     Int       @default(0)
+  commentCount Int     @default(0) 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([questionId])
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  answer    Answer   @relation(fields: [answerId], references: [id])
+  answerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([answerId])
+  @@index([authorId])
+}
+
+model Vote {
+  id         String    @id @default(cuid())
+  value      Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  answerId   String?
+
+  @@unique([userId, questionId], name: "userId_questionId")
+  @@unique([userId, answerId],   name: "userId_answerId")
+
+  @@index([questionId])
+  @@index([answerId])
+  @@index([userId])
 }

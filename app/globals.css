@@ -36,6 +36,106 @@
   background-color: #1b2836; /* zebra striping */
 }
 
+.jodit-dark .jodit-workplace {
+  background-color: #1E293B;
+  color: #E5E7EB;
+}
+
+.jodit-dark .jodit-toolbar {
+  background-color: #0F172A;
+  border-color: #334155;
+}
+
+.jodit-dark .jodit-toolbar__box a.jodit-toolbar-button {
+  color: #E5E7EB;
+}
+
+.jodit-dark .jodit-toolbar__box a.jodit-toolbar-button:hover:not([disabled]) {
+  background-color: #334155;
+}
+
+.jodit-dark .jodit-container {
+  border-color: #334155;
+}
+
+.jodit-dark .jodit-status-bar {
+  background-color: #0F172A;
+  border-color: #334155;
+  color: #94A3B8;
+}
+.prose {
+  word-break: break-word;      /* fallback */
+  overflow-wrap: anywhere;     /* modern */
+  word-wrap: break-word;       /* legacy */
+}
+
+.prose table {
+  table-layout: fixed;     /* Prevents cells from expanding infinitely */
+  width: 100%;             /* Take full width */
+  word-break: break-word;  /* Break long words */
+  overflow-wrap: break-word;
+}
+
+.prose td, 
+.prose th {
+  word-break: break-word; 
+  white-space: pre-wrap;   /* Keeps spacing but allows wrapping */
+}
+
+.ripple {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 9999px;
+  opacity: 0;
+  transform: scale(0);
+}
+
+.ripple-active {
+  animation: rippleExpand 420ms ease-out forwards;
+  background: rgba(96, 165, 250, 0.24); /* light blue */
+  width: 160%;
+  height: 160%;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  filter: blur(8px);
+}
+
+@keyframes rippleExpand {
+  0% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.01);
+  }
+  60% {
+    opacity: 0.35;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+@keyframes vote-success {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.vote-success {
+  animation: vote-success 0.5s ease-out;
+}
 
 @theme inline {
   --color-background: var(--background);

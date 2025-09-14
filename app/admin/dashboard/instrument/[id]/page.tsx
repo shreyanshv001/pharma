@@ -163,16 +163,27 @@ export default function AdminInstrumentDetail() {
                   method: "DELETE",
                   credentials: "include",
                 });
+                
+                const data = await response.json();
+                
                 if (response.ok) {
                   alert("Instrument deleted successfully");
                   router.push("/admin/dashboard");
+                } else if (response.status === 404) {
+                  alert("Instrument not found. It may have been already deleted.");
+                  router.push("/admin/dashboard");
+                } else if (response.status === 401 || response.status === 403) {
+                  alert("You are not authorized to delete this instrument.");
+                  router.push("/admin/login");
+                } else if (response.status === 409) {
+                  alert(data.error || "Cannot delete instrument because it is linked to experiments. Please remove these links first.");
                 } else {
-                  const data = await response.json();
+                  console.error("Delete error:", data);
                   alert(data.error || "Failed to delete instrument");
                 }
               } catch (err) {
-                console.error(err);
-                alert("Network error");
+                console.error("Delete network error:", err);
+                alert("Network error while deleting instrument. Please try again.");
               }
             }}
             className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"

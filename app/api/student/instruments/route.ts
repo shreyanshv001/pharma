@@ -8,11 +8,10 @@ export async function GET(req: Request) {
 
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
-
-    const page = parseInt(searchParams.get("page") || "1");
+    const cursor = searchParams.get("cursor"); // last instrument ID
     const limit = 10;
-    const skip = (page - 1) * limit;
 
+    // Build filters
     const filters: Prisma.InstrumentWhereInput[] = [];
 
     if (search) {
@@ -24,26 +23,29 @@ export async function GET(req: Request) {
       });
     }
 
-    if (category && category !== "") {
+    if (category) {
       filters.push({ category: category as Category });
     }
 
     const where: Prisma.InstrumentWhereInput =
       filters.length > 0 ? { AND: filters } : {};
 
+    // Fetch instruments using cursor-based pagination
     const instruments = await db.instrument.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip,
       take: limit,
+      skip: cursor ? 1 : 0, // skip the cursor item itself
+      ...(cursor ? { cursor: { id: cursor } } : {}),
     });
 
-    const total = await db.instrument.count({ where });
+    // Get next cursor (last item’s id)
+    const nextCursor =
+      instruments.length > 0 ? instruments[instruments.length - 1].id : null;
 
     return NextResponse.json({
       instruments,
-      page,
-      totalPages: Math.ceil(total / limit),
+      nextCursor,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {

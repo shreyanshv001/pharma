@@ -91,7 +91,7 @@ export default function AdminExperimentDetail() {
     
 
   return (
-    <div className="min-h-screen bg-[#101A23] p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-[#101A23] pb-20 p-4 sm:p-6 md:p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
@@ -150,16 +150,26 @@ export default function AdminExperimentDetail() {
                     credentials: "include",
                   }
                 );
+                const data = await response.json();
+                
                 if (response.ok) {
                   alert("Experiment deleted successfully");
                   router.push("/admin/experiments");
+                } else if (response.status === 404) {
+                  alert("Experiment not found. It may have been already deleted.");
+                  router.push("/admin/experiments");
+                } else if (response.status === 401 || response.status === 403) {
+                  alert("You are not authorized to delete this experiment.");
+                  router.push("/admin/login");
+                } else if (response.status === 409) {
+                  alert(data.error || "Cannot delete experiment because it has linked instruments. Please remove these links first.");
                 } else {
-                  const data = await response.json();
+                  console.error("Delete error:", data);
                   alert(data.error || "Failed to delete experiment");
                 }
               } catch (err) {
-                console.error(err);
-                alert("Network error");
+                console.error("Delete network error:", err);
+                alert("Network error while deleting experiment. Please try again.");
               }
             }}
             className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"

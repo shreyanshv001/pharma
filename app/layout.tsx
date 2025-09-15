@@ -27,7 +27,7 @@ export default function RootLayout({
         <body className={`${inter.variable} font-inter flex flex-col min-h-screen`}>
           {/* Wrap only here */}
           <ReactQueryProvider>
-            <main className="flex-1 bg-gray-100">{children}</main>
+            <main className="flex-1 bg-[#101A23]">{children}</main>
             <BottomNav />
           </ReactQueryProvider>
         </body>

@@ -16,17 +16,13 @@ export default function AnswerUpvote({
   const [voteCount, setVoteCount] = useState(initialVotes);
   const [userVote, setUserVote] = useState<number | null>(initialUserVote);
   const [loading, setLoading] = useState(false);
-  const [ripple, setRipple] = useState(false);
 
   const handleVote = async (clicked: number) => {
     if (loading) return;
-
-    // toggle undo
     const newVoteState = userVote === clicked ? 0 : clicked;
 
     setLoading(true);
 
-    // optimistic update
     const prevVote = userVote;
     let newVoteCount = voteCount;
     if (prevVote) newVoteCount -= prevVote;
@@ -40,24 +36,14 @@ export default function AnswerUpvote({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ value: newVoteState }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        // rollback
         setVoteCount(voteCount);
         setUserVote(prevVote);
         console.error("Vote failed", data?.error);
       } else {
-        // sync server
         if (data.totalVotes !== undefined) setVoteCount(data.totalVotes);
         setUserVote(data.userVote ?? null);
-
-        // show ripple only for successful UPVOTE (not undo or downvote)
-        if (newVoteState === 1) {
-          setRipple(true);
-          window.setTimeout(() => setRipple(false), 450);
-        }
       }
     } catch (err) {
       setVoteCount(voteCount);
@@ -69,58 +55,61 @@ export default function AnswerUpvote({
   };
 
   return (
-    <>
-      <div className="relative flex flex-col items-center gap-3 text-2xl">
-        {/* ripple element, centered and expanding */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 m-auto rounded-full opacity-0 transform scale-0 ${
-            ripple ? "ripple-active" : ""
+    <div className="flex flex-col items-center gap-2 py-2 relative">
+      {/* UPVOTE */}
+      <button
+        className={`group relative w-11 h-11 rounded-full border transition-all duration-300 flex items-center justify-center
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
+          ${userVote === 1 ? "border-green-400/60" : "border-slate-600/60 hover:border-green-400/60"}
+          ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        onClick={() => handleVote(1)}
+        disabled={loading}
+        title={userVote === 1 ? "Remove upvote" : "Upvote this answer"}
+        aria-pressed={userVote === 1}
+      >
+        <i
+          className={`ri-arrow-up-line text-lg transition-transform duration-300 ${
+            userVote === 1
+              ? "text-green-400 scale-110 drop-shadow-[0_0_10px_rgba(74,222,128,0.65)]"
+              : "text-slate-400 group-hover:text-green-400 group-hover:scale-110 group-hover:drop-shadow-[0_0_10px_rgba(74,222,128,0.45)]"
           }`}
         />
-        <i
-          className={`border-[#9CA3AF] border-1 px-1 rounded-full ri-arrow-up-line cursor-pointer transition ${
-            userVote === 1 ? "text-blue-500" : "text-gray-400"
-          } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-          onClick={() => handleVote(1)}
-        />
-        <span className="text-lg font-medium">{voteCount}</span>
-        <i
-          className={`border-[#9CA3AF] border-1 px-1 rounded-full ri-arrow-down-line cursor-pointer transition ${
-            userVote === -1 ? "text-red-500" : "text-gray-400"
-          } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-          onClick={() => handleVote(-1)}
-        />
+      </button>
+
+      {/* VOTE COUNT */}
+      <div className="flex flex-col items-center py-2">
+        <span className="text-lg font-bold text-slate-200">{voteCount}</span>
+        <span className="text-xs text-slate-500 font-medium">
+          {Math.abs(voteCount) === 1 ? "vote" : "votes"}
+        </span>
       </div>
 
-      {/* ripple CSS */}
-      <style jsx>{`
-        .ripple-active {
-          animation: rippleExpand 420ms ease-out forwards;
-          background: rgba(96, 165, 250, 0.24); /* light blue */
-          width: 160%;
-          height: 160%;
-          left: 50%;
-          top: 50%;
-          transform-origin: center;
-          filter: blur(8px);
-        }
+      {/* DOWNVOTE */}
+      <button
+        className={`group relative w-11 h-11 rounded-full border transition-all duration-300 flex items-center justify-center
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
+          ${userVote === -1 ? "border-red-400/60" : "border-slate-600/60 hover:border-red-400/60"}
+          ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        onClick={() => handleVote(-1)}
+        disabled={loading}
+        title={userVote === -1 ? "Remove downvote" : "Downvote this answer"}
+        aria-pressed={userVote === -1}
+      >
+        <i
+          className={`ri-arrow-down-line text-lg transition-transform duration-300 ${
+            userVote === -1
+              ? "text-red-400 scale-110 drop-shadow-[0_0_10px_rgba(248,113,113,0.65)]"
+              : "text-slate-400 group-hover:text-red-400 group-hover:scale-110 group-hover:drop-shadow-[0_0_10px_rgba(248,113,113,0.45)]"
+          }`}
+        />
+      </button>
 
-        @keyframes rippleExpand {
-          0% {
-            opacity: 0.6;
-            transform: translate(-50%, -50%) scale(0.01);
-          }
-          60% {
-            opacity: 0.35;
-            transform: translate(-50%, -50%) scale(0.9);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(1.15);
-          }
-        }
-      `}</style>
-    </>
+      {/* Loading indicator */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+    </div>
   );
 }

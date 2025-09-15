@@ -52,16 +52,19 @@ export default function QuestionDetailPage() {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes freshness
   });
-  console.log("Question Data:", question);
-
-
 
   if (questionLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6286A9] mx-auto"></div>
-          <p className="mt-4 text-[#6286A9]">Loading question...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
+        <div className="relative min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-800/60 rounded-full mb-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-400 border-t-transparent"></div>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Loading Question</h3>
+            <p className="text-slate-400">Please wait while we fetch the details...</p>
+          </div>
         </div>
       </div>
     );
@@ -69,126 +72,172 @@ export default function QuestionDetailPage() {
 
   if (questionError || !question) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#101A23]">
-        <p className="text-center py-10 text-gray-400">Question not found</p>
-        <button 
-          onClick={() => router.push('/qa')}
-          className="mt-4 px-4 py-2 bg-[#6286A9] text-white rounded-lg hover:bg-[#4a6b8a] transition"
-        >
-          Back to Questions
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
+        <div className="relative min-h-screen flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-6">
+              <i className="ri-question-answer-line text-2xl text-red-400"></i>
+            </div>
+            <h3 className="text-2xl font-bold text-slate-300 mb-4">Question Not Found</h3>
+            <p className="text-slate-400 mb-8 leading-relaxed">
+              The requested question could not be found. It may have been removed or the link is incorrect.
+            </p>
+            <button 
+              onClick={() => router.push('/qa')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 text-white rounded-xl hover:bg-slate-600 transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              <i className="ri-arrow-left-line"></i>
+              Back to Questions
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Add this debug log to check IDs
-  console.log('User IDs:', {
-    questionUserId: question?.Userid,
-    currentUserId: user?.id,
-    authorId: question?.author?.id
-  });
-
   return (
     <>
       <SignedIn>
-        {/* Mobile Header */}
-        <div className="lg:hidden relative  bg-[#182634] py-4">
-          <button
-              onClick={() => router.back()}
-              className="absolute left-4 top-1/2 -translate-y-1/2 inline-flex items-center text-[#E7EDF4] hover:text-[#6286A9]"
-            >
-              <i className="ri-arrow-left-line mr-2 text-lg"></i>
-          </button>
-
-          <div className="text-center font-bold text-lg text-white">Question</div>
-        </div>
-
-        <div className="p-4 py-5 lg:pt-20 pb-28 min-h-screen bg-[#101A23] text-white">
-          {/* Desktop Back Button */}
-          <div className="hidden lg:block mb-6">
-            <Link
-              href="/qa"
-              className="inline-flex items-center text-[#E7EDF4] hover:text-[#6286A9] transition"
-            >
-              <i className="ri-arrow-left-line mr-2 text-lg"></i>
-              Back to Questions
-            </Link>
-          </div>
-
-          {/* Question Section */}
-          <div className="bg-[#182634] rounded-xl py-6 px-2 mb-8 shadow-lg">
-            <div className="flex gap-3">
-              {/* Left Column: Votes & Author Image */}
-              <div className="flex flex-col pb-4 items-center justify-between ">
-                <div className="flex flex-col gap-1 items-center space-y-4">
-
-                {/* Author Image */}
-                {question.author?.imageUrl ? (
-                  <div className="w-12 h-12 overflow-hidden rounded-full">
-                    <img
-                      src={question.author.imageUrl}
-                      alt={question.author.name || "User"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-gray-500 flex items-center justify-center text-white"> {/* Changed from rounded-full to rounded-lg */}
-                    {question.author?.name?.charAt(0) || "U"}
-                  </div>
-                )}
-              {/* Votes */}
-                <QuestionUpvote
-                  questionId={question.id}
-                  initialVotes={question.totalVotes ?? 0} 
-                  userVote={question.userVote ?? null} 
-                />
+        <div className="min-h-screen bg-gradient-to-br pb-20 from-slate-950 via-slate-900 to-slate-950">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
+          
+          <div className="relative">
+            {/* Mobile Header */}
+            <div className="lg:hidden bg-slate-800/60 border-b border-slate-700/30 shadow-xl">
+              <div className="flex items-center justify-between px-4 py-3">
+                <button
+                  onClick={() => router.back()}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-xl transition-all duration-300"
+                >
+                  <i className="ri-arrow-left-line text-lg"></i>
+                </button>
+                
+                <div className="flex items-center gap-2">
+                  <i className="ri-question-answer-line text-blue-400"></i>
+                  <span className="font-semibold text-2xl text-white">Question</span>
                 </div>
                 
+                <div className="w-12"></div> {/* Spacer */}
+              </div>
+            </div>
+
+            <div className="px-4 sm:px-6 lg:px-8 py-6 lg:pt-20 ">
+              {/* Desktop Back Button */}
+              <div className="hidden lg:block mb-8">
+                <Link
+                  href="/qa"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl transition-all duration-300 hover:scale-105 group"
+                >
+                  <i className="ri-arrow-left-line text-lg group-hover:-translate-x-1 transition-transform duration-300"></i>
+                  Back to Q&A Community
+                </Link>
               </div>
 
-              {/* Right Column: Question Content */}
-              <div className="flex flex-col justify-between">
-                <div>
+              <div className="max-w-5xl mx-auto">
+                {/* Question Section */}
+                <div className="bg-slate-800/60 rounded-xl border border-slate-700/30 shadow-xl overflow-hidden mb-8">
+                  <div className="py-5 px-1 lg:p-8">
+                    <div className="flex gap-2 lg:gap-6 ">
+                      {/* Left Column: User Image & Votes */}
+                      <div className="flex flex-col items-center space-y-4 flex-shrink-0">
+                        {/* Author Image */}
+                        {question.author?.imageUrl ? (
+                          <div className="w-12 h-12 lg:w-14 lg:h-14 overflow-hidden rounded-full border-2 border-slate-600 shadow-lg">
+                            <img
+                              src={question.author.imageUrl}
+                              alt={question.author.name || "User"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white font-semibold text-lg border-2 border-slate-600 shadow-lg">
+                            {question.author?.name?.charAt(0) || "U"}
+                          </div>
+                        )}
 
-                {/* Question Title */}
-                <h1 className="text-2xl capitalize md:text-3xl font-bold mb-3">
-                  {question.title}
-                </h1>
+                        {/* Votes */}
+                        <QuestionUpvote
+                          questionId={question.id}
+                          initialVotes={question.totalVotes ?? 0} 
+                          userVote={question.userVote ?? null} 
+                        />
+                      </div>
 
-                {/* Question Description */}
-                <div 
-                  className="text-[#9CA3AF] self-stretch capitalize table-styles mb-4 break-words prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: question.description }}
-                />
+                      {/* Right Column: Question Content */}
+                      <div className="flex flex-col min-w-0 justify-between ">
+                        <div  className="flex-1 min-w-0">
+
+                          {/* Question Title */}
+                          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 leading-tight capitalize">
+                            {question.title}
+                          </h1>
+
+                          {/* Question Description */}
+                          <div 
+                            className="text-slate-300 leading-relaxed capitalize table-styles mb-6 prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-slate-300 prose-code:text-blue-300 prose-code:bg-slate-800/50 prose-pre:bg-slate-800/50 prose-pre:border prose-pre:border-slate-600/30"
+                            dangerouslySetInnerHTML={{ __html: question.description }}
+                          />
+                        </div>
+
+                        {/* Question Stats */}
+                        <div className="flex items-center justify-between text-xs px-2 py-2 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                         
+                            <div className="flex items-center gap-1">
+                              <i className="ri-user-line text-blue-400"></i>
+                              <span className="font-medium text-xs text-slate-300">
+                                Asked by {question.author?.name 
+                                  ? (question.author.name.toLowerCase().startsWith('user') 
+                                    ? question.author.name.slice(0, 12) + (question.author.name.length > 12 ? '...' : '')
+                                    : question.author.name)
+                                  : "Anonymous"}
+                              </span>
+                            </div>
+                            
+                            <div className="flex text-xs items-center gap-1">
+                              <i className="ri-time-line text-green-400"></i>
+                              <span className="text-slate-400">{timeAgo(question.createdAt)}</span>
+                            </div>
+                       
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Author Info */}
-                <div className="flex items-center text-[#6A717F]">
-                  <div className="text-xs flex  gap-1 font-medium mr-2">
-                    Asked by {question.author?.name 
-                      ? (question.author.name.toLowerCase().startsWith('user') 
-                         ? question.author.name.slice(0, 12) + (question.author.name.length > 12 ? '...' : '')
-                         : question.author.name)
-                      : "Anonymous"},
-                    <p className="text-xs">
-                      {question.updatedAt !== question.createdAt ? (
-                        <div className="flex flex-col">
-                          <span className="text-[#6A717F] mb-2 ">{timeAgo(question.createdAt)}</span>
-                          <span className="text-[#4A90E2]  ">Edited {timeAgo(question.updatedAt)}</span>
-                        </div>
-                      ) : (
-                        timeAgo(question.createdAt)
-                      )}
-                    </p>
+                {/* Answers Section */}
+                <div className="py-3 rounded-xl border border-slate-700/30  shadow-xl overflow-hidden">
+                  <div className="p-2 lg:p-8 border-b border-slate-700/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                        <i className="ri-chat-3-line text-blue-400"></i>
+                      </div>
+                      <h2 className="text-xl font-semibold text-white">
+                        {question._count.answers === 0 
+                          ? "No answers yet" 
+                          : question._count.answers === 1 
+                            ? "1 Answer" 
+                            : `${question._count.answers} Answers`
+                        }
+                      </h2>
+                    </div>
+                    
+                    {question._count.answers === 0 && (
+                      <p className="text-slate-400 text-sm mt-3 leading-relaxed">
+                        Be the first to help by providing an answer to this pharmaceutical question.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="p-2 lg:p-8">
+                    <AnswersList questionId={question.id} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Answers List Component */}
-          <AnswersList questionId={question.id} />
-
         </div>
       </SignedIn>
 

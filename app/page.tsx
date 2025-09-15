@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 
 // ---- TYPE DEFINITIONS ----
 interface Instrument {
@@ -23,7 +22,7 @@ interface PageData {
 const categoryOptions = [
   "ALL",
   "PHARMACEUTIC",
-  "PHARMACOGNOSY",
+  "PHARMACOGNOSY", 
   "PHARMACOLOGY",
   "PHARMACEUTICAL_CHEMISTRY"
 ];
@@ -60,7 +59,6 @@ export default function InstrumentsList() {
     refetchOnWindowFocus: false,
   });
 
-
   // ---- MERGE PAGES ----
   const instruments = data?.pages.flatMap(page => page.instruments) ?? [];
 
@@ -79,25 +77,22 @@ export default function InstrumentsList() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // ---- RESET DATA ON FILTER CHANGE ----
-  useEffect(() => {
-    // React Query will refetch when queryKey ([search,category]) changes automatically.
-    // No need to manually reset.
-  }, [search, category]);
-
   // ---- NAVIGATE TO INSTRUMENT DETAILS ----
   const goToInstrument = (inst: Instrument) => router.push(`/instrument/${inst.id}`);
 
   // ---- LOADING SKELETON ----
   const LoadingSkeleton = () => (
-    <div className="grid gap-6 lg:grid-cols-5 lg:px-7 lg:h-72 grid-cols-2">
-      {[...Array(8)].map((_, i) => (
+    <div className="grid gap-6 grid-cols-2  sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      {[...Array(12)].map((_, i) => (
         <div
           key={i}
-          className="bg-[#182634] rounded-lg shadow animate-pulse h-48"
+          className="bg-slate-800/50 rounded-xl shadow-lg animate-pulse overflow-hidden border border-slate-700/30"
         >
-          <div className="h-32 bg-[#2a3a4a] rounded-t-lg"></div>
-          <div className="h-5 bg-[#2a3a4a] rounded w-3/4 mx-auto mt-3"></div>
+          <div className="h-44 bg-slate-700/50"></div>
+          <div className="p-4 space-y-3">
+            <div className="h-4 bg-slate-700/50 rounded-md w-3/4"></div>
+            <div className="h-3 bg-slate-700/30 rounded-md w-1/2"></div>
+          </div>
         </div>
       ))}
     </div>
@@ -105,88 +100,172 @@ export default function InstrumentsList() {
 
   // ---- RENDER ----
   return (
-    <div className="px-5 pt-5 md:p-0 pb-28 bg-[#101A23] min-h-screen">
-      <h1 className="text-3xl font-bold block lg:hidden text-white mb-8 text-center">Instruments</h1>
-      <div className="text-white lg:pt-34 pt-5 max-w-3xl lg:block hidden mx-auto mb-6 space-y-1 text-center">
-        <div className="lg:text-4xl text-2xl font-bold ">Explore Pharmaceutical Instruments</div>
-        <div className=" max-w-3xl text-zinc-400 mt-4 ">An extensive library of instruments for pharmacy students. </div>
-        <div className="max-w-3xl text-zinc-400"> Search, learn, and master their details.</div>
-      </div>
-      {/* --- Search & Category Filters --- */}
-      <div className="max-w-3xl mx-auto mb-8">
-        <div className="relative mb-6">
-          <i className="ri-search-line absolute text-xl left-3 top-1/2 transform -translate-y-1/2 text-[#6286A9]" />
-          <Input
-            placeholder="Search instruments"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-[#E7EDF4] text-[#6286A9] placeholder:text-[#6286A9] border-0 focus:ring-0"
-          />
+    <div className="min-h-screen bg-gradient-to-br lg:pt-28 from-slate-950 via-slate-900 to-slate-950">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
+      
+      <div className="relative px-4 sm:px-6 lg:px-8 pt-8 pb-32">
+        {/* Header Section */}
+        <div className="text-center mb-4">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-6 tracking-tight">
+            Pharmaceutical Instruments
+          </h1>
+          <p className="text-md hidden lg:block sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
+            Explore our comprehensive collection of laboratory instruments designed for pharmaceutical research, 
+            <span className="text-slate-300"> quality control, and educational purposes</span>
+          </p>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-3 mb-6 scrollbar-hide">
-          {categoryOptions.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
-                category === cat
-                  ? "bg-[#6286A9] text-white"
-                  : "bg-[#182634] text-[#E7EDF4] hover:bg-[#223243]"
-              }`}
-            >
-              {cat === "ALL" ? "All" : cat.replace(/_/g, " ")}
-            </button>
-          ))}
+
+        {/* Search & Filter Section */}
+        <div className="max-w-4xl mx-auto mb-4 lg:mb-14 space-y-6">
+          {/* Search Bar */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative">
+              <i className="ri-search-line absolute text-xl left-5 top-1/2 transform -translate-y-1/2 text-slate-400 z-10" />
+              <Input
+                placeholder="Search instruments by name, category, or description..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-14 pr-6 py-4 text-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 shadow-xl"
+              />
+            </div>
+          </div>
+
+          {/* Category Filters */}
+          <div className="relative -mx-4 px-4">
+          <div
+            className="
+              flex gap-3 justify-start flex-nowrap overflow-x-auto
+              lg:flex-wrap  lg:justify-center px-2
+              scroll-smooth snap-x snap-mandatory scrollbar-hide
+            "
+          >
+            {categoryOptions.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`shrink-0 snap-start lg:px-6 px-4 py-2 lg:py-3 rounded-xl text-sm font-medium transition-all duration-300 backdrop-blur-sm border ${
+                  category === cat
+                    ? "bg-gradient-to-r from-slate-700 to-slate-600 text-white border-slate-500/50 shadow-lg shadow-slate-500/20 scale-105"
+                    : "bg-slate-800/60 text-slate-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-white hover:scale-105 hover:shadow-lg"
+                }`}
+              >
+                {cat === "ALL"
+                  ? "All Categories"
+                  : cat
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (l) => l.toUpperCase())}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      {/* --- Instruments Grid --- */}
-      {isLoading ? (
-        <LoadingSkeleton />
-      ) : isError ? (
-        <div className="text-center text-red-400 py-16">
-          Error loading instruments. Please try again.
         </div>
-      ) : instruments.length === 0 ? (
-        <div className="text-center text-[#E7EDF4] py-16">No instruments found</div>
-      ) : (
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-          {instruments.map((inst) => (
-            <div
-              key={inst.id}
-              onClick={() => goToInstrument(inst)}
-              className="bg-[#182634] hover:bg-[#223243] transition-colors rounded-lg shadow cursor-pointer flex flex-col select-none"
-            >
-              {inst.imageUrls && inst.imageUrls.length > 0 ? (
-                <div className="h-40 w-full overflow-hidden rounded-t-lg">
-                  <img
-                    src={inst.imageUrls[0]}
-                    alt={inst.name}
-                    className="w-full h-full object-cover"
-                  />
+
+        {/* Instruments Grid */}
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : isError ? (
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
+              <i className="ri-error-warning-line text-2xl text-red-400"></i>
+            </div>
+            <h3 className="text-xl font-semibold text-red-400 mb-2">Unable to Load Instruments</h3>
+            <p className="text-slate-400">Please check your connection and try again</p>
+          </div>
+        ) : instruments.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-700/50 rounded-full mb-4">
+              <i className="ri-search-line text-2xl text-slate-400"></i>
+            </div>
+            <h3 className="text-xl font-semibold text-slate-300 mb-2">No Instruments Found</h3>
+            <p className="text-slate-400">Try adjusting your search terms or category filter</p>
+          </div>
+        ) : (
+          <>
+            {/* Results Count */}
+            <div className="text-center mb-8">
+              <p className="text-slate-400 font-medium">
+                Found <span className="text-white font-semibold">{instruments.length}</span> instruments
+                {category !== "ALL" && (
+                  <> in <span className="text-blue-400">{category.replace(/_/g, " ").toLowerCase()}</span></>
+                )}
+              </p>
+            </div>
+
+            {/* Instruments Grid */}
+            <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {instruments.map((inst, index) => (
+                <div
+                  key={inst.id}
+                  onClick={() => goToInstrument(inst)}
+                  className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:-translate-y-2"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/30 shadow-xl group-hover:shadow-2xl group-hover:shadow-blue-500/10 group-hover:border-blue-500/30 transition-all duration-300">
+                    {/* Image Container */}
+                    <div className="relative h-44 overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800">
+                      {inst.imageUrls && inst.imageUrls.length > 0 ? (
+                        <>
+                          <img
+                            src={inst.imageUrls[0]}
+                            alt={inst.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 group-hover:text-slate-400 transition-colors duration-300">
+                          <i className="ri-image-line text-3xl"></i>
+                        </div>
+                      )}
+                      
+                      {/* Category Badge */}
+                      <div className="absolute top-3 right-3 px-2 py-1 bg-slate-900/80 backdrop-blur-sm rounded-lg">
+                        <span className="text-xs font-medium text-slate-300">
+                          {inst.category.replace(/_/g, " ").slice(0, 12)}...
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-white text-sm leading-tight mb-2 line-clamp-2 group-hover:text-blue-300 transition-colors duration-300">
+                        {inst.name}
+                      </h3>
+                      {inst.discription && (
+                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                          {inst.discription}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="h-40 w-full bg-[#2a3a4a] rounded-t-lg flex items-center justify-center text-[#6286A9] text-sm">
-                  No Image
-                </div>
-              )}
-              <div className="p-3 text-center">
-                <h2 className="text-sm capitalize text-[#E7EDF4] truncate">
-                  {inst.name}
-                </h2>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Infinite Scroll Loader */}
+        <div ref={loaderRef} className="text-center py-12 mt-8">
+          {isFetchingNextPage ? (
+            <div className="inline-flex items-center space-x-3 text-slate-400">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-400 border-t-transparent"></div>
+              <span className="font-medium">Loading more instruments...</span>
+            </div>
+          ) : hasNextPage ? (
+            <p className="text-slate-500 font-medium">Scroll down to load more</p>
+          ) : instruments.length > 0 ? (
+            <div className="text-slate-500">
+              <div className="inline-flex items-center space-x-2">
+                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                <span className="font-medium">All instruments loaded</span>
+                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
               </div>
             </div>
-          ))}
+          ) : null}
         </div>
-      )}
-      {/* --- Infinite Scroll Loader --- */}
-      <div ref={loaderRef} className="text-center py-6 text-[#E7EDF4]">
-        {isFetchingNextPage
-          ? "Loading more..."
-          : hasNextPage
-          ? "Scroll down to load more"
-          : instruments.length > 0
-          ? "All instruments loaded"
-          : null}
       </div>
     </div>
   );

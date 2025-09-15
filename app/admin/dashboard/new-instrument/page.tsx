@@ -3,13 +3,14 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Dynamically import JoditEditor to prevent SSR issues
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function AddInstrumentPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -140,47 +141,55 @@ export default function AddInstrumentPage() {
     setImages(newImages);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("category", category);
-      formData.append("discription", discription);
-      formData.append("principle", principle);
-      formData.append("sop", sop);
-      formData.append("ichGuideline", ichGuideline);
-      formData.append("procedure", procedure);
-      formData.append("advantages", advantages);
-      formData.append("limitations", limitations);
-      formData.append("specifications", specifications);
-      formData.append("videoUrl", videoUrl);
-      images.forEach((file) => formData.append("images", file));
-
-      const response = await fetch("/api/admin/add-instruments", {
+  // React Query mutation
+  const createInstrumentMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/admin/add-instruments", {
         method: "POST",
         body: formData,
         credentials: "include",
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add instrument");
+      return data;
+    },
+    onSuccess: () => {
+      setSuccess("Instrument added successfully!");
+      queryClient.invalidateQueries({ queryKey: ["admin", "instruments"] });
+      setTimeout(() => router.push("/admin/dashboard"), 1200);
+    },
+    onError: (err: unknown) => {
+      setError(err instanceof Error ? err.message : "Error occurred");
+    },
+  });
 
-      const data = await response.json();
+  const isSubmitting = createInstrumentMutation.isPending;
 
-      if (!response.ok) {
-        setError(data.error || "Failed to add instrument");
-      } else {
-        setSuccess("Instrument added successfully!");
-        setTimeout(() => router.push("/admin/dashboard"), 1500);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!name.trim() || !category) {
+      setError("Name and category are required.");
+      return;
     }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("category", category);
+    formData.append("discription", discription);
+    formData.append("principle", principle);
+    formData.append("sop", sop);
+    formData.append("ichGuideline", ichGuideline);
+    formData.append("procedure", procedure);
+    formData.append("advantages", advantages);
+    formData.append("limitations", limitations);
+    formData.append("specifications", specifications);
+    formData.append("videoUrl", videoUrl);
+    images.forEach((file) => formData.append("images", file));
+
+    createInstrumentMutation.mutate(formData);
   };
 
   return (
@@ -232,42 +241,82 @@ export default function AddInstrumentPage() {
 
           <div>
               <label className="block text-[#E7EDF4] mb-1">Description</label>
-              <JoditEditor ref={editor} config={config} value={discription} onBlur={(newContent) => setDiscription(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={discription}
+                onBlur={(newContent: string) => setDiscription(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Principle</label>
-              <JoditEditor ref={editor} config={config} value={principle} onBlur={(newContent) => setPrinciple(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={principle}
+                onBlur={(newContent: string) => setPrinciple(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">SOP</label>
-              <JoditEditor ref={editor} config={config} value={sop} onBlur={(newContent) => setSop(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={sop}
+                onBlur={(newContent: string) => setSop(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">ICH Guideline</label>
-              <JoditEditor ref={editor} config={config} value={ichGuideline} onBlur={(newContent) => setIchGuideline(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={ichGuideline}
+                onBlur={(newContent: string) => setIchGuideline(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Procedure</label>
-              <JoditEditor ref={editor} config={config} value={procedure} onBlur={(newContent) => setProcedure(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={procedure}
+                onBlur={(newContent: string) => setProcedure(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Advantages</label>
-              <JoditEditor ref={editor} config={config} value={advantages} onBlur={(newContent) => setAdvantages(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={advantages}
+                onBlur={(newContent: string) => setAdvantages(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Limitations</label>
-              <JoditEditor ref={editor} config={config} value={limitations} onBlur={(newContent) => setLimitations(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={limitations}
+                onBlur={(newContent: string) => setLimitations(newContent)}
+              />
             </div>
 
             <div>
               <label className="block text-[#E7EDF4] mb-1">Specifications</label>
-              <JoditEditor ref={editor} config={config} value={specifications} onBlur={(newContent) => setSpecifications(newContent)} />
+              <JoditEditor
+                ref={editor}
+                config={config}
+                value={specifications}
+                onBlur={(newContent: string) => setSpecifications(newContent)}
+              />
             </div>
 
 
@@ -342,10 +391,10 @@ export default function AddInstrumentPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] font-semibold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Adding..." : "Add Instrument"}
+            {isSubmitting ? "Adding..." : "Add Instrument"}
           </button>
         </form>
       </div>

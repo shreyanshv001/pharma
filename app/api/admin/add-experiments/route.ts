@@ -24,32 +24,34 @@ export async function POST(req: Request) {
     // 3. Parse request body
     const formData = await req.formData();
 
-    const title = formData.get("title") as string;
-    const objective = formData.get("objective") as string;
-    const materials = formData.get("materials") as string;
-    const procedure = formData.get("procedure") as string;
-    const observation = formData.get("observation") as string;
-    const result = formData.get("result") as string;
-    const discussion = formData.get("discussion") as string;
-    const conclusion = formData.get("conclusion") as string;
-    const videoUrl = formData.get("videoUrl") as string;
+    const object = formData.get("object") as string | null;
+    const reference = formData.get("reference") as string | null;
+    const materials = formData.get("materials") as string | null;
+    const theory = formData.get("theory") as string | null;
+    const procedure = formData.get("procedure") as string | null;
+    const observation = formData.get("observation") as string | null;
+    const result = formData.get("result") as string | null;
+    const chemicalReaction = formData.get("chemicalReaction") as string | null;
+    const calculations = formData.get("calculations") as string | null;
+    const videoUrl = formData.get("videoUrl") as string | null;
 
     
-    if (!title) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    if (!object || !object.trim()) {
+      return NextResponse.json({ error: "Field 'object' is required" }, { status: 400 });
     }
 
     // 4. Create experiment in DB
     const experiment = await db.experiment.create({
       data: {
-        title,
-        objective,
+        object,
+        reference,
         materials,
+        theory,
         procedure,
         observation,
         result,
-        discussion,
-        conclusion,
+        chemicalReaction,
+        calculations,
         videoUrl
       },
     });

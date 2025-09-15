@@ -3,18 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import YouTubePlayer from "@/components/YoutubePlayer";
+import YouTubePlayer from "@/components/YoutubePlayer";    
 
 interface Experiment {
   id: string;
-  title: string;
-  objective?: string;
+  object: string;
+  reference?: string;
   materials?: string;
   procedure?: string;
   observation?: string;
   result?: string;
-  discussion?: string;
-  conclusion?: string;
+  theory?: string;
+  chemicalReaction?: string;
+  calculation?: string;
   createdAt: string;
   updatedAt?: string;
   videoUrl?: string;
@@ -96,7 +97,7 @@ export default function AdminExperimentDetail() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#E7EDF4]">
-            {experiment.title}
+            {experiment.object}
           </h1>
         </div>
         <Link
@@ -109,14 +110,15 @@ export default function AdminExperimentDetail() {
 
       {/* Experiment Details */}
       <div className="space-y-4">
-        {renderSection("Title", experiment.title)}
-        {renderSection("Objective", experiment.objective)}
+        {renderSection("Object", experiment.object)}
+        {renderSection("Reference", experiment.reference)}
         {renderSection("Materials", experiment.materials)}
+        {renderSection("Theory", experiment.theory)}
         {renderSection("Procedure", experiment.procedure)}
         {renderSection("Observation", experiment.observation)}
         {renderSection("Result", experiment.result)}
-        {renderSection("Discussion", experiment.discussion)}
-        {renderSection("Conclusion", experiment.conclusion)}
+        {renderSection("Chemical Reaction", experiment.chemicalReaction)}
+        {renderSection("Calculation", experiment.calculation)}
 
         {experiment.videoUrl && (
           <div className="bg-[#182634] rounded-lg shadow-sm p-6">

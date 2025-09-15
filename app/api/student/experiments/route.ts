@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     if (search) {
       filters.push({
-        title: {
+        object: {
           contains: search,
           mode: "insensitive",
         },
@@ -34,6 +34,10 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
+      select: {
+      id: true,        // usually needed for unique identification
+      object: true,
+    },
     });
 
     const total = await db.experiment.count({ where });

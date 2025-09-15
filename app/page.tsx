@@ -58,6 +58,7 @@ export default function InstrumentsList() {
     initialPageParam: "",
     refetchOnWindowFocus: false,
   });
+  console.log("Fetched instruments data:", data);
 
   // ---- MERGE PAGES ----
   const instruments = data?.pages.flatMap(page => page.instruments) ?? [];
@@ -110,7 +111,7 @@ export default function InstrumentsList() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-6 tracking-tight">
             Pharmaceutical Instruments
           </h1>
-          <p className="text-md hidden lg:block sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
+          <p className="text-md  lg:block sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
             Explore our comprehensive collection of laboratory instruments designed for pharmaceutical research, 
             <span className="text-slate-300"> quality control, and educational purposes</span>
           </p>
@@ -184,15 +185,6 @@ export default function InstrumentsList() {
           </div>
         ) : (
           <>
-            {/* Results Count */}
-            <div className="text-center mb-8">
-              <p className="text-slate-400 font-medium">
-                Found <span className="text-white font-semibold">{instruments.length}</span> instruments
-                {category !== "ALL" && (
-                  <> in <span className="text-blue-400">{category.replace(/_/g, " ").toLowerCase()}</span></>
-                )}
-              </p>
-            </div>
 
             {/* Instruments Grid */}
             <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -235,9 +227,13 @@ export default function InstrumentsList() {
                         {inst.name}
                       </h3>
                       {inst.discription && (
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                          {inst.discription}
-                        </p>
+                        // <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        //   {inst.discription}
+                        // </p>
+                        <div
+                          className="text-xs capitalize text-slate-400 line-clamp-2 leading-relaxedprose prose-invert max-w-none"
+                          dangerouslySetInnerHTML={{ __html: inst.discription }}
+                        />
                       )}
                     </div>
                   </div>

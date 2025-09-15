@@ -452,7 +452,7 @@ const InstrumentDetailClient: React.FC<InstrumentDetailProps> = ({ instrumentId 
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors duration-300 capitalize line-clamp-1">
-                            {rel.experiment.title}
+                            {rel.experiment.object}
                           </span>
                         </div>
                         <i className="ri-arrow-right-line text-sm text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all duration-300"></i>

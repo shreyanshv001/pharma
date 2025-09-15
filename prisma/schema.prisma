@@ -48,14 +48,15 @@ enum Category {
 
 model Experiment {
   id          String       @id @default(cuid())
-  title       String
-  objective   String?
+  object      String
+  reference   String?
   materials   String?
+  theory      String?
   procedure   String?
   observation String?
   result      String?
-  discussion  String?
-  conclusion  String?
+  chemicalReaction String?
+  calculations  String?
   videoUrl    String?
   instruments ExperimentOnInstrument[]
 

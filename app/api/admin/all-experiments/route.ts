@@ -23,21 +23,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
-    // 3. Fetch all experiments with their instruments
+    // 3. Fetch all experiments with instruments
     const experiments = await db.experiment.findMany({
-      include: {
-        instruments: {
-          include: {
-            instrument: true,
-          },
-        },
+      select: {
+        id: true,
+        object: true,
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json(experiments);
+    return NextResponse.json(experiments, { status: 200 });
   } catch (error) {
     console.error("Error fetching experiments:", error);
     return NextResponse.json(

@@ -37,6 +37,7 @@ export async function GET(req: Request) {
       take: limit,
       skip: cursor ? 1 : 0, // skip the cursor item itself
       ...(cursor ? { cursor: { id: cursor } } : {}),
+      select:{ id: true, name: true, discription: true, imageUrls: true, category: true },
     });
 
     // Get next cursor (last item’s id)

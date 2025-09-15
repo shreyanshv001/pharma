@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-// Dynamically import JoditEditor to avoid SSR issues
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function AddExperimentPage() {
@@ -13,94 +12,44 @@ export default function AddExperimentPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Form fields
-  const [title, setTitle] = useState("");
-  const [objective, setObjective] = useState("");
-  const [principle, setPrinciple] = useState("");
+  // Form fields (match backend schema)
+  const [object, setObject] = useState("");
+  const [reference, setReference] = useState("");
+  const [materials, setMaterials] = useState("");
+  const [theory, setTheory] = useState("");
   const [procedure, setProcedure] = useState("");
   const [observation, setObservation] = useState("");
   const [result, setResult] = useState("");
+  const [chemicalReaction, setChemicalReaction] = useState("");
+  const [calculations, setCalculations] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
   const editor = useRef(null);
-    const config = {
-      readonly: false,
-      height: 200,
-      placeholder: "Describe your question here...",
-      theme: "dark",
-      buttons: [
-        'bold', 
-        'italic', 
-        'underline', 
-        'ul', 
-        'ol',
-        'paragraph', // Add paragraph dropdown (contains alignment options)
-        'align', // Explicit alignment buttons
-        'hr', // Horizontal rule/line
-        'link',
-        'image',
-        'table',
-        'undo', 
-        'redo'
-      ],
-      // Same buttons for all screen sizes
-      buttonsMD: [
-        'bold', 
-        'italic', 
-        'underline', 
-        'ul', 
-        'ol',
-        'paragraph', // Add paragraph dropdown (contains alignment options)
-        'align', // Explicit alignment buttons
-        'hr', // Horizontal rule/line
-        'link',
-        'image',
-        'table',
-        'undo', 
-        'redo'
-      ],
-      buttonsSM: [
-        'bold', 
-        'italic', 
-        'underline', 
-        'ul', 
-        'ol',
-        'paragraph', // Add paragraph dropdown (contains alignment options)
-        'align', // Explicit alignment buttons
-        'hr', // Horizontal rule/line
-        'link',
-        'image',
-        'table',
-        'undo', 
-        'redo'
-      ],
-      buttonsXS: [
-        'bold', 
-        'italic', 
-        'underline', 
-        'ul', 
-        'ol',
-        'paragraph', // Add paragraph dropdown (contains alignment options)
-        'align', // Explicit alignment buttons
-        'hr', // Horizontal rule/line
-        'link',
-        'image',
-        'table',
-        'undo', 
-        'redo'
-      ],
-      style: {
-        background: '#101A23',  // Dark background to match your theme
-        color: '#E5E7EB'        // Light text color
-      },
-      uploader: {
-        insertImageAsBase64URI: true
-      },
-      toolbarAdaptive: false,   // Disable toolbar adaptation to maintain same buttons
-      toolbarSticky: true,      // Keep toolbar visible when scrolling
-      allowResizeX: false,      // Prevent horizontal resizing
-      allowResizeY: true,       // Allow vertical resizing
-    };
+  const config = {
+    readonly: false,
+    height: 200,
+    placeholder: "Write here...",
+    theme: "dark",
+    buttons: [
+      "bold",
+      "italic",
+      "underline",
+      "ul",
+      "ol",
+      "paragraph",
+      "align",
+      "hr",
+      "link",
+      "image",
+      "table",
+      "undo",
+      "redo",
+    ],
+    toolbarAdaptive: false,
+    toolbarSticky: true,
+    style: { background: "#101A23", color: "#E5E7EB" },
+    uploader: { insertImageAsBase64URI: true },
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,12 +59,15 @@ export default function AddExperimentPage() {
 
     try {
       const formData = new FormData();
-      formData.append("title", title);
-      formData.append("objective", objective);
-      formData.append("principle", principle);
+      formData.append("object", object);
+      formData.append("reference", reference);
+      formData.append("materials", materials);
+      formData.append("theory", theory);
       formData.append("procedure", procedure);
       formData.append("observation", observation);
       formData.append("result", result);
+      formData.append("chemicalReaction", chemicalReaction);
+      formData.append("calculations", calculations);
       formData.append("videoUrl", videoUrl);
 
       const response = await fetch("/api/admin/add-experiments", {
@@ -160,47 +112,105 @@ export default function AddExperimentPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
+          {/* Object */}
           <input
             type="text"
-            placeholder="Experiment Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Experiment Object"
+            value={object}
+            onChange={(e) => setObject(e.target.value)}
             required
-            className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] placeholder:text-[#6286A9] px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#6286A9]"
+            className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md"
           />
 
-          {/* Objective */}
+          {/* Reference */}
           <div>
-            <label className="block text-[#E7EDF4] mb-1">Objective</label>
-            <JoditEditor config={config} ref={editor} value={objective} onBlur={(content) => setObjective(content)} />
+            <label className="block text-[#E7EDF4] mb-1">Reference</label>
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={reference}
+              onBlur={(content) => setReference(content)}
+            />
           </div>
 
-          {/* Principle */}
+          {/* Materials */}
           <div>
-            <label className="block text-[#E7EDF4] mb-1">Principle</label>
-            <JoditEditor config={config} ref={editor} value={principle} onBlur={(content) => setPrinciple(content)} />
+            <label className="block text-[#E7EDF4] mb-1">Materials</label>
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={materials}
+              onBlur={(content) => setMaterials(content)}
+            />
+          </div>
+
+          {/* Theory */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Theory</label>
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={theory}
+              onBlur={(content) => setTheory(content)}
+            />
           </div>
 
           {/* Procedure */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Procedure</label>
-            <JoditEditor config={config} ref={editor} value={procedure} onBlur={(content) => setProcedure(content)} />
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={procedure}
+              onBlur={(content) => setProcedure(content)}
+            />
           </div>
 
           {/* Observation */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Observation</label>
-            <JoditEditor config={config} ref={editor} value={observation} onBlur={(content) => setObservation(content)} />
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={observation}
+              onBlur={(content) => setObservation(content)}
+            />
           </div>
 
           {/* Result */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Result</label>
-            <JoditEditor config={config} ref={editor} value={result} onBlur={(content) => setResult(content)} />
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={result}
+              onBlur={(content) => setResult(content)}
+            />
           </div>
 
-          {/* Video */}
+          {/* Chemical Reaction */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Chemical Reaction</label>
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={chemicalReaction}
+              onBlur={(content) => setChemicalReaction(content)}
+            />
+          </div>
+
+          {/* Calculations */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Calculations</label>
+            <JoditEditor
+              config={config}
+              ref={editor}
+              value={calculations}
+              onBlur={(content) => setCalculations(content)}
+            />
+          </div>
+
+          {/* Video URL */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">YouTube Video ID</label>
             <input
@@ -208,16 +218,15 @@ export default function AddExperimentPage() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="e.g., dQw4w9WgXcQ"
-              className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] placeholder:text-[#6286A9] px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#6286A9]"
+              className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md"
             />
           </div>
-
 
           {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] font-semibold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] font-semibold py-3 px-4 rounded-lg disabled:opacity-50"
           >
             {loading ? "Adding..." : "Add Experiment"}
           </button>

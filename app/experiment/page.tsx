@@ -6,8 +6,7 @@ import Link from "next/link";
 
 interface Experiment {
   id: string;
-  title: string;
-  description?: string;
+  object: string;
 }
 
 interface ExperimentsResponse {
@@ -16,11 +15,29 @@ interface ExperimentsResponse {
   totalPages: number;
 }
 
+// ✅ Debounce Hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function ExperimentsList() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 800); // 800ms debounce
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
-  // Infinite Query for page-based pagination
+  // Infinite Query with debounced search
   const {
     data,
     isLoading,
@@ -29,10 +46,12 @@ export default function ExperimentsList() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery<ExperimentsResponse>({
-    queryKey: ['experiments', search],
+    queryKey: ["experiments", debouncedSearch],
     queryFn: async ({ pageParam = 1 }) => {
       const res = await fetch(
-        `/api/student/experiments?search=${encodeURIComponent(search)}&page=${pageParam}`
+        `/api/student/experiments?search=${encodeURIComponent(
+          debouncedSearch
+        )}&page=${pageParam}`
       );
       if (!res.ok) throw new Error("Failed to fetch experiments");
       return res.json();
@@ -43,10 +62,10 @@ export default function ExperimentsList() {
     initialPageParam: 1,
   });
 
-  // Flatten all fetched pages of experiments
-  const allExperiments = data?.pages.flatMap(page => page.experiments) ?? [];
+  // Flatten all fetched pages
+  const allExperiments = data?.pages.flatMap((page) => page.experiments) ?? [];
 
-  // Setup intersection observer to trigger fetchNextPage when loader appears
+  // Intersection Observer
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
     const observer = new IntersectionObserver(
@@ -87,31 +106,40 @@ export default function ExperimentsList() {
     <div className="min-h-screen bg-gradient-to-br lg:pt-20 from-slate-950 via-slate-900 to-slate-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
-      
+
       <div className="relative px-4 sm:px-6 lg:px-8 pt-8 pb-32">
-        {/* Header Section */}
+        {/* Header */}
         <div className="text-center mb-4">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-6 tracking-tight">
             Laboratory Experiments
           </h1>
           <p className="text-md hidden lg:block sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
-            Discover hands-on experiments designed for pharmaceutical education, 
-            <span className="text-slate-300"> research methodology, and practical learning</span>
+            Discover hands-on experiments designed for pharmaceutical education,{" "}
+            <span className="text-slate-300">
+              research methodology, and practical learning
+            </span>
           </p>
         </div>
 
-        {/* Search Section */}
+        {/* Search */}
         <div className="max-w-3xl mx-auto mb-4 lg:mb-12">
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative">
               <i className="ri-search-line absolute text-xl left-5 top-1/2 transform -translate-y-1/2 text-slate-400 z-10" />
               <Input
-                placeholder="Search experiments by title or description..."
+                placeholder="Search experiments by object..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-14 pr-6 py-4 text-lg bg-slate-800/80 border border-slate-700/50 rounded-2xl text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 shadow-xl"
               />
+              
+              {/* Search indicator */}
+              {search !== debouncedSearch && (
+                <div className="absolute right-5 top-1/2 transform -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -124,31 +152,34 @@ export default function ExperimentsList() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
               <i className="ri-error-warning-line text-2xl text-red-400"></i>
             </div>
-            <h3 className="text-xl font-semibold text-red-400 mb-2">Unable to Load Experiments</h3>
-            <p className="text-slate-400">Please check your connection and try again</p>
+            <h3 className="text-xl font-semibold text-red-400 mb-2">
+              Unable to Load Experiments
+            </h3>
+            <p className="text-slate-400">
+              Please check your connection and try again
+            </p>
           </div>
         ) : allExperiments.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-700/50 rounded-full mb-4">
               <i className="ri-flask-line text-2xl text-slate-400"></i>
             </div>
-            <h3 className="text-xl font-semibold text-slate-300 mb-2">No Experiments Found</h3>
-            <p className="text-slate-400">Try adjusting your search terms</p>
+            <h3 className="text-xl font-semibold text-slate-300 mb-2">
+              {debouncedSearch ? "No Experiments Found" : "No Experiments Available"}
+            </h3>
+            <p className="text-slate-400">
+              {debouncedSearch 
+                ? `No experiments match "${debouncedSearch}". Try different keywords.`
+                : "Try adjusting your search terms or check back later"
+              }
+            </p>
           </div>
         ) : (
           <>
-            {/* Results Count */}
-            <div className="text-center mb-8">
-              <p className="text-slate-400 font-medium">
-                Found <span className="text-white font-semibold">{allExperiments.length}</span> experiments
-                {search && (
-                  <> matching <span className="text-blue-400">{search}</span></>
-                )}
-              </p>
-            </div>
+            
 
             {/* Experiments List */}
-            <div className="max-w-4xl mx-auto space-y-4">
+            <div className="max-w-4xl mt-7 mx-auto space-y-4">
               {allExperiments.map((exp, index) => (
                 <Link
                   key={exp.id}
@@ -168,15 +199,12 @@ export default function ExperimentsList() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1 group-hover:text-blue-300 transition-colors duration-300">
-                          {exp.title}
+                        <h3 className="text-md font-semibold text-white mb-2 line-clamp-4 group-hover:text-blue-300 transition-colors duration-300 capitalize leading-snug">
+                          {exp.object}
                         </h3>
-                        <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 group-hover:text-slate-300 transition-colors duration-300">
-                          {exp.description || "No description available"}
-                        </p>
                       </div>
 
-                      {/* Arrow Icon */}
+                      {/* Arrow */}
                       <div className="shrink-0">
                         <i className="ri-arrow-right-line text-xl text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all duration-300"></i>
                       </div>
@@ -192,10 +220,14 @@ export default function ExperimentsList() {
                 {isFetchingNextPage ? (
                   <div className="inline-flex items-center space-x-3 text-slate-400">
                     <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-400 border-t-transparent"></div>
-                    <span className="font-medium">Loading more experiments...</span>
+                    <span className="font-medium">
+                      Loading more experiments...
+                    </span>
                   </div>
                 ) : (
-                  <p className="text-slate-500 font-medium">Scroll down to load more</p>
+                  <p className="text-slate-500 font-medium">
+                    Scroll down to load more
+                  </p>
                 )}
               </div>
             )}

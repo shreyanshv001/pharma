@@ -12,8 +12,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "My App",
+  title: "PharmaLab",
   description: "App with sidebar",
+  icons: {
+    icon: "/favicon-32x32.png", // ✅ no /public
+  },
 };
 
 export default function RootLayout({

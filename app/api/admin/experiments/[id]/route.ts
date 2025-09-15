@@ -1,38 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
 
-// GET a single experiment by id
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
+// ✅ Helper: Verify Admin Auth
+async function verifyAdmin(req: NextRequest) {
+  const token = req.headers
+    .get("cookie")
+    ?.split("admin_token=")[1]
+    ?.split(";")[0];
 
-  // 🔑 Auth
-  try {
-    const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    try {
-      jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
+  if (!token) {
+    return { error: "Unauthorized", status: 401 };
   }
 
-  // 🔑 Protected logic
+  try {
+    jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
+    return { ok: true };
+  } catch {
+    return { error: "Invalid token", status: 403 };
+  }
+}
+
+// 📌 GET: Single experiment by ID (with instruments)
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const auth = await verifyAdmin(req);
+  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const experiment = await db.experiment.findUnique({
       where: { id },
+      include: {
+        instruments: {
+          include: {
+            instrument: true, // ✅ brings full instrument data
+          },
+        },
+      },
     });
 
     if (!experiment) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Experiment not found" }, { status: 404 });
     }
 
     return NextResponse.json(experiment);
@@ -42,35 +55,28 @@ export async function GET(
   }
 }
 
-// UPDATE an experiment
+// 📌 PUT: Update experiment details (only experiment fields, not instruments)
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;
+  const { id } = await params;
 
-  // 🔑 Auth
-  try {
-    const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    try {
-      jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
-  }
+  const auth = await verifyAdmin(req);
+  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  // 🔑 Protected logic
   try {
     const data = await req.json();
+
     const updated = await db.experiment.update({
       where: { id },
-      data,
+      data: {
+        object: data.object,
+        theory: data.theory,
+        // ✅ add more fields from your schema if needed
+      },
     });
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Update experiment error:", error);
@@ -78,73 +84,57 @@ export async function PUT(
   }
 }
 
-// DELETE an experiment
+// 📌 DELETE: Delete experiment & linked records
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;
+  const { id } = await params;
 
-  // 🔑 Auth
-  try {
-    const token = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    try {
-      jwt.verify(token, process.env.ADMIN_JWT_SECRET!);
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Auth check failed" }, { status: 500 });
-  }
+  const auth = await verifyAdmin(req);
+  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  // 🔑 Protected logic
   try {
-    // First check if the experiment exists
     const experiment = await db.experiment.findUnique({
       where: { id },
-      include: {
-        instruments: true
-      }
+      include: { instruments: true },
     });
 
     if (!experiment) {
       return NextResponse.json({ error: "Experiment not found" }, { status: 404 });
     }
 
-    // Delete in a transaction to ensure data consistency
+    // ✅ Transaction ensures consistency
     await db.$transaction(async (tx) => {
-      // First delete all experiment-instrument relationships
       await tx.experimentOnInstrument.deleteMany({
-        where: {
-          experimentId: id
-        }
+        where: { experimentId: id },
       });
 
-      // Then delete the experiment
       await tx.experiment.delete({
-        where: { id }
+        where: { id },
       });
     });
 
     return NextResponse.json({ message: "Experiment deleted successfully" });
   } catch (error) {
     console.error("Delete experiment error:", error);
-    
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
         return NextResponse.json({ error: "Experiment not found" }, { status: 404 });
       }
       if (error.code === "P2003") {
-        return NextResponse.json({ 
-          error: "Cannot delete experiment because it has linked instruments. Please remove the instrument links first.",
-          details: error.message 
-        }, { status: 409 });
+        return NextResponse.json(
+          {
+            error:
+              "Cannot delete experiment because it has linked instruments. Remove instrument links first.",
+            details: error.message,
+          },
+          { status: 409 }
+        );
       }
     }
-    
+
     return NextResponse.json({ error: "Failed to delete experiment" }, { status: 500 });
   }
 }

@@ -13,14 +13,17 @@ interface Instrument {
 
 interface Experiment {
   id: string;
-  title: string;
-  objective?: string;
+  object: string;
+  reference?: string;
   materials?: string;
   procedure?: string;
   observation?: string;
   result?: string;
-  discussion?: string;
-  conclusion?: string;
+  theory?: string;
+  chemicalReaction?: string;
+  calculation?: string;
+  createdAt: string;
+  updatedAt?: string;
   videoUrl?: string;
   instruments?: { instrument: Instrument }[];
 }
@@ -170,7 +173,7 @@ export default function ExperimentDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br lg:pt-20 from-slate-950 via-slate-900 to-slate-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
       
@@ -189,10 +192,10 @@ export default function ExperimentDetail() {
         </div>
 
         {/* Title */}
-        {experiment.title && (
+        {experiment.object && (
           <div className="text-center mb-8 px-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-4 tracking-tight capitalize leading-tight">
-              {experiment.title}
+            <h1 className="text-2xl sm:text-4xl lg:text-4xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-4 tracking-tight capitalize leading-tight">
+              {experiment.object}
             </h1>
           </div>
         )}
@@ -201,14 +204,24 @@ export default function ExperimentDetail() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto space-y-6">
             <CollapsibleSection 
-              title="Objective" 
-              content={experiment.objective} 
-              icon="ri-target-line"
+              title="Reference" 
+              content={experiment.reference} 
+              icon="ri-bookmark-line"
             />
             <CollapsibleSection 
-              title="Materials" 
+              title="Material Required" 
               content={experiment.materials} 
-              icon="ri-list-check-line"
+              icon="ri-list-check"
+            />
+            <CollapsibleSection 
+              title="Theory" 
+              content={experiment.theory} 
+              icon="ri-lightbulb-line"
+            />
+            <CollapsibleSection 
+              title="Chemical Reaction" 
+              content={experiment.chemicalReaction} 
+              icon="ri-flask-fill"
             />
             <CollapsibleSection 
               title="Procedure" 
@@ -221,19 +234,14 @@ export default function ExperimentDetail() {
               icon="ri-eye-line"
             />
             <CollapsibleSection 
+              title="Calculation" 
+              content={experiment.calculation} 
+              icon="ri-calculator-line"
+            />
+            <CollapsibleSection 
               title="Result" 
               content={experiment.result} 
               icon="ri-bar-chart-line"
-            />
-            <CollapsibleSection 
-              title="Discussion" 
-              content={experiment.discussion} 
-              icon="ri-chat-3-line"
-            />
-            <CollapsibleSection 
-              title="Conclusion" 
-              content={experiment.conclusion} 
-              icon="ri-checkbox-circle-line"
             />
 
             {/* Video Section */}

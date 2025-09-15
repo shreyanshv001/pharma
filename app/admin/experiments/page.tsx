@@ -1,85 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
+interface Instrument {
+  id: string;
+  name: string;
+  description?: string;
+}
 interface Experiment {
   id: string;
-  title: string;
-  objective?: string;
-  materials?: string;
-  procedure?: string;
-  observation?: string;
-  result?: string;
-  discussion?: string;
-  conclusion?: string;
-  createdAt: string;
+  object: string;
+  instruments: {
+    instrument: Instrument;
+  }[];
+}
+
+// Fetcher using credentials (admin auth)
+async function fetchExperiments(): Promise<Experiment[]> {
+  const res = await fetch("/api/admin/all-experiments", {
+    credentials: "include",
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("AUTH");
+  }
+  if (!res.ok) {
+    throw new Error("FAILED");
+  }
+  return res.json();
 }
 
 export default function AdminExperiments() {
-  const [experiments, setExperiments] = useState<Experiment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
+  const {
+    data: experiments = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["admin", "experiments"],
+    queryFn: fetchExperiments,
+    refetchOnWindowFocus: false,
+  });
+
+  // Redirect if unauthorized
   useEffect(() => {
-    const fetchExperiments = async () => {
-      try {
-        const response = await fetch("/api/admin/all-experiments", {
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setExperiments(data);
-        } else if (response.status === 401 || response.status === 403) {
-          router.push("/admin/login");
-        } else {
-          setError("Failed to fetch experiments");
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Network error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExperiments();
-  }, [router]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/admin/logout", { method: "POST" });
+    if (isError && (error as Error)?.message === "AUTH") {
       router.push("/admin/login");
-    } catch (err) {
-      console.error(err);
     }
-  };
+  }, [isError, error, router]);
 
-  if (loading) {
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["admin"] });
+      router.push("/admin/login");
+    },
+  });
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#101A23] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6286A9] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6286A9] mx-auto" />
           <p className="mt-4 text-[#6286A9]">Loading experiments...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (isError && (error as Error).message !== "AUTH") {
     return (
       <div className="min-h-screen bg-[#101A23] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#E7EDF4] mb-4">Error</h1>
-          <p className="text-[#6286A9] mb-4">{error}</p>
+          <p className="text-[#6286A9] mb-4">
+            {(error as Error).message === "FAILED"
+              ? "Failed to fetch experiments"
+              : "Unexpected error"}
+          </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => refetch()}
             className="bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] px-4 py-2 rounded-lg"
           >
-            Try Again
+            Retry
           </button>
         </div>
       </div>
@@ -95,8 +110,13 @@ export default function AdminExperiments() {
             <h1 className="text-xl sm:text-2xl font-bold text-[#E7EDF4]">
               Admin Dashboard
             </h1>
-            <p className="text-[#6286A9] text-sm sm:text-base">
+            <p className="text-[#6286A9] text-sm sm:text-base flex items-center gap-2">
               Manage Experiments
+              {isFetching && (
+                <span className="animate-pulse text-xs text-[#4a6b8a]">
+                  (refreshing…)
+                </span>
+              )}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
@@ -107,10 +127,11 @@ export default function AdminExperiments() {
               Add Experiment
             </Link>
             <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
             >
-              Logout
+              {logoutMutation.isPending ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>
@@ -118,11 +139,18 @@ export default function AdminExperiments() {
 
       {/* Content */}
       <div className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#E7EDF4] mb-4">
-          All Experiments ({experiments.length})
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-[#E7EDF4]">
+            All Experiments ({experiments.length})
+          </h2>
+          <button
+            onClick={() => refetch()}
+            className="text-xs px-3 py-1 rounded bg-[#223243] hover:bg-[#2d3a47] text-[#6286A9] transition"
+          >
+            Refresh
+          </button>
+        </div>
 
-        {/* Experiments List */}
         <div className="space-y-4">
           {experiments.map((exp) => (
             <div
@@ -132,24 +160,26 @@ export default function AdminExperiments() {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-[#E7EDF4]">
-                    {exp.title}
+                    {exp.object}
                   </h3>
-
-                  {exp.objective && (
-                    <div
-                      className="text-[#e7edf4c7] text-sm mb-2 line-clamp-2"
-                      dangerouslySetInnerHTML={{ __html: exp.objective }}
-                    />
-                  )}
-
-
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#6286A9]">
-                    <span>
-                      Created: {new Date(exp.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                  {/* {exp.instruments.length > 0 && (
+                    <div className="mt-2 text-xs text-[#6286A9] flex flex-wrap gap-2">
+                      {exp.instruments.slice(0, 4).map(({ instrument }) => (
+                        <span
+                          key={instrument.id}
+                          className="px-2 py-1 bg-[#223243] rounded"
+                        >
+                          {instrument.name}
+                        </span>
+                      ))}
+                      {exp.instruments.length > 4 && (
+                        <span className="px-2 py-1 bg-[#223243] rounded">
+                          +{exp.instruments.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  )} */}
                 </div>
-
                 <div className="flex flex-row sm:flex-col gap-2 sm:gap-1">
                   <Link
                     href={`experiments/${exp.id}`}
@@ -164,10 +194,10 @@ export default function AdminExperiments() {
         </div>
 
         {experiments.length === 0 && (
-          <div className="text-center py-8 sm:py-12">
+          <div className="text-center py-12">
             <p className="text-[#6286A9] text-lg">No experiments found</p>
             <Link
-              href="/admin/add-experiment"
+              href="/admin/experiments/new-experiment"
               className="inline-block mt-4 bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] px-6 py-2 rounded-lg transition-colors duration-200"
             >
               Add Your First Experiment

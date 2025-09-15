@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
@@ -23,6 +22,16 @@ export default function ResponsiveNav() {
     if (href === "/profile") return pathname === "/profile" || pathname.startsWith("/profile/");
     return pathname === href || pathname.startsWith(href + "/");
   };
+
+  // Get active index for sliding animation
+  const getActiveIndex = () => {
+    const activeIndex = navItems.findIndex(item => isActive(item.href));
+    return activeIndex !== -1 ? activeIndex : 0;
+  };
+
+  const activeIndex = getActiveIndex();
+  const desktopActiveIndex = navItems.slice(0, 3).findIndex(item => isActive(item.href));
+  const isProfileActiveDesktop = isActive("/profile");
 
   return (
     <>
@@ -101,51 +110,63 @@ export default function ResponsiveNav() {
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.02)_1px,transparent_0)] [background-size:16px_16px]"></div>
         
-        <div className="relative flex justify-around items-center pb-1 px-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group flex flex-col items-center transition-all duration-300 px-3 py-2 rounded-xl ${
-                isActive(item.href) 
-                  ? "bg-gradient-to-b from-slate-700 to-slate-600 shadow-lg shadow-slate-500/20 scale-101" 
-                  : "hover:bg-slate-800/60 hover:scale-105"
-              }`}
-            >
-              {item.label === "Profile" && user ? (
-                <>
-                  <div className="relative mb-1">
-                    <img
-                      src={user.imageUrl}
-                      alt="Profile"
-                      className={`w-7 h-7 rounded-full border-2 transition-all duration-300 ${
-                        isActive(item.href) 
-                          ? "border-blue-400 shadow-lg shadow-blue-500/25" 
-                          : "border-slate-600 group-hover:border-blue-400"
-                      }`}
-                    />
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  <span className={`text-xs font-medium transition-colors duration-300 ${
-                    isActive(item.href) ? "text-white" : "text-slate-300 group-hover:text-white"
-                  }`}>
-                    {user.firstName || user.username || "Profile"}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <i className={`${item.icon} text-xl mb-1 transition-all duration-300 ${
-                    isActive(item.href) ? "text-white" : "text-slate-300 group-hover:text-white group-hover:scale-110"
-                  }`}></i>
-                  <span className={`text-xs font-medium transition-colors duration-300 ${
-                    isActive(item.href) ? "text-white" : "text-slate-300 group-hover:text-white"
-                  }`}>
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </Link>
-          ))}
+        <div className="relative flex justify-around items-center py-1 ">
+          <div className="relative flex rounded-2xl p-2 w-full">
+            {/* Sliding Background for Mobile */}
+            <div 
+              className="absolute top-2 bg-gradient-to-b from-slate-700 to-slate-600 rounded-xl shadow-lg transition-all duration-300 ease-in-out"
+              style={{ 
+                left: '8px',
+                width: `calc(25% - 6px)`,
+                height: '64px',
+                transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 4}px))`
+              }}
+            />
+            
+            {navItems.map((item, index) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative flex flex-col items-center transition-all duration-300 px-2 py-2 rounded-xl flex-1 h-16 justify-center z-10"
+              >
+                {item.label === "Profile" && user ? (
+                  <>
+                    <div className="relative mb-1">
+                      <img
+                        src={user.imageUrl}
+                        alt="Profile"
+                        className={`w-7 h-7 rounded-full border-2 transition-all duration-300 ${
+                          isActive(item.href) 
+                            ? "border-blue-400 shadow-lg shadow-blue-500/25" 
+                            : "border-slate-600 group-hover:border-blue-400"
+                        }`}
+                      />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      {/* Online status indicator */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border border-slate-900 rounded-full"></div>
+                    </div>
+                    <span className={`text-xs font-medium transition-colors duration-300 ${
+                      isActive(item.href) ? "text-white" : "text-slate-300 group-hover:text-white"
+                    }`}>
+                      {user.firstName || user.username || "Profile"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <i className={`${item.icon} text-xl mb-1 transition-all duration-300 ${
+                      isActive(item.href) ? "text-white scale-110 " : "text-slate-300 group-hover:text-white group-hover:scale-110"
+                    }`}></i>
+                    <span className={`text-xs font-medium transition-colors duration-300 ${
+                      isActive(item.href) ? "text-white scale-105" : "text-slate-300 group-hover:text-white"
+                    }`}>
+                      {item.label}
+                    </span>
+                  </>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </>

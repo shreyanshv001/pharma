@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Instrument {
   id: string;
@@ -22,48 +22,45 @@ interface Instrument {
   updatedAt: string;
 }
 
+async function fetchInstruments(): Promise<Instrument[]> {
+  const res = await fetch("/api/admin/all-instruments", {
+    credentials: "include",
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("AUTH");
+  }
+  if (!res.ok) throw new Error("FAILED");
+  return res.json();
+}
+
 export default function AdminDashboard() {
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchInstruments = async () => {
-      try {
-        const response = await fetch("/api/admin/all-instruments", {
-          credentials: "include",
-        });
+  const {
+    data: instruments = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["admin", "instruments"],
+    queryFn: fetchInstruments,
+    refetchOnWindowFocus: false,
+  });
 
-        if (response.ok) {
-          const data = await response.json();
-          setInstruments(data);
-        } else if (response.status === 401 || response.status === 403) {
-          router.push("/admin/login");
-        } else {
-          setError("Failed to fetch instruments");
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Network error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInstruments();
-  }, [router]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/admin/logout", { method: "POST" });
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["admin"] });
       router.push("/admin/login");
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    },
+  });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#101A23] flex items-center justify-center">
         <div className="text-center">
@@ -74,18 +71,23 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error) {
+  if (isError) {
+    if ((error as Error)?.message === "AUTH") {
+      // Redirect after first paint to avoid hydration warning
+      if (typeof window !== "undefined") router.push("/admin/login");
+      return null;
+    }
     return (
       <div className="min-h-screen bg-[#101A23] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#E7EDF4] mb-4">Error</h1>
-          <p className="text-[#6286A9] mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] px-4 py-2 rounded-lg"
-          >
-            Try Again
-          </button>
+            <p className="text-[#6286A9] mb-4">Failed to fetch instruments</p>
+            <button
+              onClick={() => refetch()}
+              className="bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] px-4 py-2 rounded-lg"
+            >
+              Retry
+            </button>
         </div>
       </div>
     );
@@ -93,15 +95,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen pb-20 bg-[#101A23]">
-      {/* Header */}
       <div className="bg-[#0D141C] shadow-sm border-b border-gray-600">
         <div className="px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[#E7EDF4]">
               Admin Dashboard
             </h1>
-            <p className="text-[#6286A9] text-sm sm:text-base">
+            <p className="text-[#6286A9] text-sm sm:text-base flex items-center gap-2">
               Manage Instruments
+              {isFetching && (
+                <span className="animate-pulse text-xs text-[#4a6b8a]">
+                  (refreshing…)
+                </span>
+              )}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
@@ -112,22 +118,21 @@ export default function AdminDashboard() {
               Add Instrument
             </Link>
             <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
             >
-              Logout
+              {logoutMutation.isPending ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-semibold text-[#E7EDF4] mb-4">
           All Instruments ({instruments.length})
         </h2>
 
-        {/* Instruments List */}
         <div className="space-y-4">
           {instruments.map((instrument) => (
             <div
@@ -152,12 +157,12 @@ export default function AdminDashboard() {
                     />
                   )}
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-xs text-[#6286A9]">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#6286A9]">
                     <span>
                       Created:{" "}
                       {new Date(instrument.createdAt).toLocaleDateString()}
                     </span>
-                    {instrument.imageUrls?.length && (
+                    {!!instrument.imageUrls?.length && (
                       <span>📷 {instrument.imageUrls.length} images</span>
                     )}
                     {instrument.videoUrl && <span>🎥 Has video</span>}
@@ -178,10 +183,10 @@ export default function AdminDashboard() {
         </div>
 
         {instruments.length === 0 && (
-          <div className="text-center py-8 sm:py-12">
+          <div className="text-center py-12">
             <p className="text-[#6286A9] text-lg">No instruments found</p>
             <Link
-              href="/admin/new-instrument"
+              href="/admin/dashboard/new-instrument"
               className="inline-block mt-4 bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] px-6 py-2 rounded-lg transition-colors duration-200"
             >
               Add Your First Instrument

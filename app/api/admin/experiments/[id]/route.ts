@@ -58,29 +58,41 @@ export async function GET(
 // 📌 PUT: Update experiment details (only experiment fields, not instruments)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
 
   const auth = await verifyAdmin(req);
-  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
   try {
-    const data = await req.json();
+    const form = await req.formData();
 
     const updated = await db.experiment.update({
       where: { id },
       data: {
-        object: data.object,
-        theory: data.theory,
-        // ✅ add more fields from your schema if needed
+        object: form.get("object") as string,
+        reference: form.get("reference") as string,
+        materials: form.get("materials") as string,
+        theory: form.get("theory") as string,
+        procedure: form.get("procedure") as string,
+        observation: form.get("observation") as string,
+        result: form.get("result") as string,
+        chemicalReaction: form.get("chemicalReaction") as string,
+        calculations: form.get("calculations") as string,
+        videoUrl: form.get("videoUrl") as string,
       },
     });
 
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Update experiment error:", error);
-    return NextResponse.json({ error: "Failed to update experiment" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update experiment" },
+      { status: 500 }
+    );
   }
 }
 

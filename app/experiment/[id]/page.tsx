@@ -21,7 +21,7 @@ interface Experiment {
   result?: string;
   theory?: string;
   chemicalReaction?: string;
-  calculation?: string;
+  calculations?: string;
   createdAt: string;
   updatedAt?: string;
   videoUrl?: string;
@@ -102,6 +102,7 @@ export default function ExperimentDetail() {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false, 
   });
+  console.log(experiment);
 
   if (isLoading) {
     return (
@@ -205,47 +206,47 @@ export default function ExperimentDetail() {
           <div className="max-w-5xl mx-auto space-y-6">
             <CollapsibleSection 
               title="Reference" 
-              content={experiment.reference} 
+              content={experiment?.reference} 
               icon="ri-bookmark-line"
             />
             <CollapsibleSection 
               title="Material Required" 
-              content={experiment.materials} 
+              content={experiment?.materials} 
               icon="ri-list-check"
             />
             <CollapsibleSection 
               title="Theory" 
-              content={experiment.theory} 
+              content={experiment?.theory} 
               icon="ri-lightbulb-line"
             />
             <CollapsibleSection 
               title="Chemical Reaction" 
-              content={experiment.chemicalReaction} 
+              content={experiment?.chemicalReaction} 
               icon="ri-flask-fill"
             />
             <CollapsibleSection 
               title="Procedure" 
-              content={experiment.procedure} 
+              content={experiment?.procedure} 
               icon="ri-route-line"
             />
             <CollapsibleSection 
               title="Observation" 
-              content={experiment.observation} 
+              content={experiment?.observation} 
               icon="ri-eye-line"
             />
             <CollapsibleSection 
               title="Calculation" 
-              content={experiment.calculation} 
+              content={experiment?.calculations} 
               icon="ri-calculator-line"
             />
             <CollapsibleSection 
               title="Result" 
-              content={experiment.result} 
+              content={experiment?.result} 
               icon="ri-bar-chart-line"
             />
 
             {/* Video Section */}
-            {experiment.videoUrl && (
+            {experiment?.videoUrl && (
               <div className="bg-slate-800/60 rounded-xl overflow-hidden border border-slate-700/30 shadow-xl">
                 <div className="p-5 bg-slate-700/50">
                   <div className="flex items-center gap-3">

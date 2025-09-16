@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
-import { Prisma } from '@prisma/client';
+import { Prisma, Category } from '@prisma/client';
+import path from "path/win32";
+import { writeFile } from "fs/promises";
 
 async function verifyAuth(req: NextRequest) {
   try {
@@ -45,22 +47,89 @@ export async function GET(
 // UPDATE instrument
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } =await params;
 
+  // ✅ Verify auth
   const auth = await verifyAuth(req);
-  if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
   try {
-    const data = await req.json();
+    const formData = await req.formData();
+
+    // Extract fields
+    const name = formData.get("name") as string;
+    const category = formData.get("category") as string;
+    const discription = formData.get("discription") as string;
+    const principle = formData.get("principle") as string;
+    const sop = formData.get("sop") as string;
+    const ichGuideline = formData.get("ichGuideline") as string;
+    const procedure = formData.get("procedure") as string;
+    const advantages = formData.get("advantages") as string;
+    const limitations = formData.get("limitations") as string;
+    const specifications = formData.get("specifications") as string;
+    const videoUrl = formData.get("videoUrl") as string;
+
+    // Handle new image uploads (from "newImages")
+    const newFiles = formData.getAll("newImages") as File[];
+    const uploadedImages: string[] = [];
+
+    if (newFiles.length > 0) {
+      for (const file of newFiles) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${Date.now()}-${file.name}`;
+        const filePath = path.join(process.cwd(), "public/uploads", filename);
+        await writeFile(filePath, buffer);
+        uploadedImages.push(`/uploads/${filename}`);
+      }
+    }
+
+    // Get existing images from formData
+    let existingImages: string[] = [];
+    const existingImagesRaw = formData.get("existingImages");
+    if (typeof existingImagesRaw === "string") {
+      try {
+        existingImages = JSON.parse(existingImagesRaw);
+      } catch {
+        existingImages = [];
+      }
+    }
+
+    // Merge existing and new images
+    const allImages = [...existingImages, ...uploadedImages];
+
+    // Convert category string to enum
+    const categoryEnum = Category[category as keyof typeof Category];
+
+    // Update record in Prisma
     const updated = await db.instrument.update({
       where: { id },
-      data,
+      data: {
+        name,
+        category: categoryEnum,
+        discription,
+        principle,
+        sop,
+        ichGuideline,
+        procedure,
+        advantages,
+        limitations,
+        specifications,
+        videoUrl,
+        imageUrls: allImages,
+      },
     });
+
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update instrument" }, { status: 500 });
+    console.error("Update error:", error);
+    return NextResponse.json(
+      { error: "Failed to update instrument" },
+      { status: 500 }
+    );
   }
 }
 

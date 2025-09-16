@@ -53,7 +53,7 @@ export default function AdminInstrumentDetail() {
     };
     fetchInstrument();
   }, [params.id, router]);
-
+  console.log(instrument);
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#101A23]">
@@ -154,7 +154,7 @@ export default function AdminInstrumentDetail() {
         </div>
 
         {/* Delete Button */}
-        <div>
+        <div className="flex gap-4 mt-6">
           <button
             onClick={async () => {
               if (!confirm("Are you sure you want to delete this instrument?")) return;
@@ -189,6 +189,9 @@ export default function AdminInstrumentDetail() {
             className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
           >
             Delete Instrument
+          </button>
+          <button onClick={() => router.push(`/admin/dashboard/instrument/${instrument.id}/edit`)} className="bg-blue-600 hover:bg-blue-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200">
+            Edit
           </button>
         </div>
       </div>

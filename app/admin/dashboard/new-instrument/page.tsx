@@ -28,6 +28,12 @@ export default function AddInstrumentPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [images, setImages] = useState<File[]>([]);
 
+   function cleanHtml(content: string) {
+    // Remove empty tags like <p><br></p>, whitespace, etc.
+    const stripped = content.replace(/<p><br><\/p>/gi, "").trim();
+    return stripped === "" ? "" : content;
+  }
+
   const categoryOptions = [
     "PHARMACEUTIC",
     "PHARMACOGNOSY",
@@ -36,84 +42,84 @@ export default function AddInstrumentPage() {
   ];
 
   const editor = useRef(null);
-  const config = {
-    readonly: false,
-    height: 200,
-    placeholder: "Describe your question here...",
-    theme: "dark",
-    buttons: [
-      'bold', 
-      'italic', 
-      'underline', 
-      'ul', 
-      'ol',
-      'paragraph', // Add paragraph dropdown (contains alignment options)
-      'align', // Explicit alignment buttons
-      'hr', // Horizontal rule/line
-      'link',
-      'image',
-      'table',
-      'undo', 
-      'redo'
-    ],
-    // Same buttons for all screen sizes
-    buttonsMD: [
-      'bold', 
-      'italic', 
-      'underline', 
-      'ul', 
-      'ol',
-      'paragraph', // Add paragraph dropdown (contains alignment options)
-      'align', // Explicit alignment buttons
-      'hr', // Horizontal rule/line
-      'link',
-      'image',
-      'table',
-      'undo', 
-      'redo'
-    ],
-    buttonsSM: [
-      'bold', 
-      'italic', 
-      'underline', 
-      'ul', 
-      'ol',
-      'paragraph', // Add paragraph dropdown (contains alignment options)
-      'align', // Explicit alignment buttons
-      'hr', // Horizontal rule/line
-      'link',
-      'image',
-      'table',
-      'undo', 
-      'redo'
-    ],
-    buttonsXS: [
-      'bold', 
-      'italic', 
-      'underline', 
-      'ul', 
-      'ol',
-      'paragraph', // Add paragraph dropdown (contains alignment options)
-      'align', // Explicit alignment buttons
-      'hr', // Horizontal rule/line
-      'link',
-      'image',
-      'table',
-      'undo', 
-      'redo'
-    ],
-    style: {
-      background: '#101A23',  // Dark background to match your theme
-      color: '#E5E7EB'        // Light text color
-    },
-    uploader: {
-      insertImageAsBase64URI: true
-    },
-    toolbarAdaptive: false,   // Disable toolbar adaptation to maintain same buttons
-    toolbarSticky: true,      // Keep toolbar visible when scrolling
-    allowResizeX: false,      // Prevent horizontal resizing
-    allowResizeY: true,       // Allow vertical resizing
-  };
+  // const config = {
+  //   readonly: false,
+  //   height: 200,
+  //   placeholder: "Describe your question here...",
+  //   theme: "dark",
+  //   buttons: [
+  //     'bold', 
+  //     'italic', 
+  //     'underline', 
+  //     'ul', 
+  //     'ol',
+  //     'paragraph', // Add paragraph dropdown (contains alignment options)
+  //     'align', // Explicit alignment buttons
+  //     'hr', // Horizontal rule/line
+  //     'link',
+  //     'image',
+  //     'table',
+  //     'undo', 
+  //     'redo'
+  //   ],
+  //   // Same buttons for all screen sizes
+  //   buttonsMD: [
+  //     'bold', 
+  //     'italic', 
+  //     'underline', 
+  //     'ul', 
+  //     'ol',
+  //     'paragraph', // Add paragraph dropdown (contains alignment options)
+  //     'align', // Explicit alignment buttons
+  //     'hr', // Horizontal rule/line
+  //     'link',
+  //     'image',
+  //     'table',
+  //     'undo', 
+  //     'redo'
+  //   ],
+  //   buttonsSM: [
+  //     'bold', 
+  //     'italic', 
+  //     'underline', 
+  //     'ul', 
+  //     'ol',
+  //     'paragraph', // Add paragraph dropdown (contains alignment options)
+  //     'align', // Explicit alignment buttons
+  //     'hr', // Horizontal rule/line
+  //     'link',
+  //     'image',
+  //     'table',
+  //     'undo', 
+  //     'redo'
+  //   ],
+  //   buttonsXS: [
+  //     'bold', 
+  //     'italic', 
+  //     'underline', 
+  //     'ul', 
+  //     'ol',
+  //     'paragraph', // Add paragraph dropdown (contains alignment options)
+  //     'align', // Explicit alignment buttons
+  //     'hr', // Horizontal rule/line
+  //     'link',
+  //     'image',
+  //     'table',
+  //     'undo', 
+  //     'redo'
+  //   ],
+  //   style: {
+  //     background: '#101A23',  // Dark background to match your theme
+  //     color: '#E5E7EB'        // Light text color
+  //   },
+  //   uploader: {
+  //     insertImageAsBase64URI: true
+  //   },
+  //   toolbarAdaptive: false,   // Disable toolbar adaptation to maintain same buttons
+  //   toolbarSticky: true,      // Keep toolbar visible when scrolling
+  //   allowResizeX: false,      // Prevent horizontal resizing
+  //   allowResizeY: true,       // Allow vertical resizing
+  // };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -176,17 +182,17 @@ export default function AddInstrumentPage() {
     }
 
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("category", category);
-    formData.append("discription", discription);
-    formData.append("principle", principle);
-    formData.append("sop", sop);
-    formData.append("ichGuideline", ichGuideline);
-    formData.append("procedure", procedure);
-    formData.append("advantages", advantages);
-    formData.append("limitations", limitations);
-    formData.append("specifications", specifications);
-    formData.append("videoUrl", videoUrl);
+    formData.append("name", cleanHtml(name));
+    formData.append("category", cleanHtml(category));
+    formData.append("discription", cleanHtml(discription));
+    formData.append("principle", cleanHtml(principle));
+    formData.append("sop", cleanHtml(sop));
+    formData.append("ichGuideline", cleanHtml(ichGuideline));
+    formData.append("procedure", cleanHtml(procedure));
+    formData.append("advantages", cleanHtml(advantages));
+    formData.append("limitations", cleanHtml(limitations));
+    formData.append("specifications", cleanHtml(specifications));
+    formData.append("videoUrl", cleanHtml(videoUrl));
     images.forEach((file) => formData.append("images", file));
 
     createInstrumentMutation.mutate(formData);
@@ -243,7 +249,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Description</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={discription}
                 onBlur={(newContent: string) => setDiscription(newContent)}
               />
@@ -253,7 +259,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Principle</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={principle}
                 onBlur={(newContent: string) => setPrinciple(newContent)}
               />
@@ -263,7 +269,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">SOP</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={sop}
                 onBlur={(newContent: string) => setSop(newContent)}
               />
@@ -273,7 +279,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">ICH Guideline</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={ichGuideline}
                 onBlur={(newContent: string) => setIchGuideline(newContent)}
               />
@@ -283,7 +289,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Procedure</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={procedure}
                 onBlur={(newContent: string) => setProcedure(newContent)}
               />
@@ -293,7 +299,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Advantages</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={advantages}
                 onBlur={(newContent: string) => setAdvantages(newContent)}
               />
@@ -303,7 +309,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Limitations</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={limitations}
                 onBlur={(newContent: string) => setLimitations(newContent)}
               />
@@ -313,7 +319,7 @@ export default function AddInstrumentPage() {
               <label className="block text-[#E7EDF4] mb-1">Specifications</label>
               <JoditEditor
                 ref={editor}
-                config={config}
+                config={{uploader: { insertImageAsBase64URI: true }}}
                 value={specifications}
                 onBlur={(newContent: string) => setSpecifications(newContent)}
               />

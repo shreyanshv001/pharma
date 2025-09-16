@@ -1,18 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
-export default function AddExperimentPage() {
+export default function EditExperimentPage() {
   const router = useRouter();
+  const { id } = useParams(); // experiment id from route
+  const editor = useRef(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Form fields (match backend schema)
+  // fields
   const [object, setObject] = useState("");
   const [reference, setReference] = useState("");
   const [materials, setMaterials] = useState("");
@@ -24,38 +27,43 @@ export default function AddExperimentPage() {
   const [calculations, setCalculations] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
-  const editor = useRef(null);
-  // const config = {
-  //   readonly: false,
-  //   height: 200,
-  //   placeholder: "Write here...",
-  //   theme: "dark",
-  //   buttons: [
-  //     "bold",
-  //     "italic",
-  //     "underline",
-  //     "ul",
-  //     "ol",
-  //     "paragraph",
-  //     "align",
-  //     "hr",
-  //     "link",
-  //     "image",
-  //     "table",
-  //     "undo",
-  //     "redo",
-  //   ],
-  //   toolbarAdaptive: false,
-  //   toolbarSticky: true,
-  //   style: { background: "#101A23", color: "#E5E7EB" },
-  //   uploader: { insertImageAsBase64URI: true },
-  // };
-
-  function cleanHtml(content: string) {
+   function cleanHtml(content: string) {
     // Remove empty tags like <p><br></p>, whitespace, etc.
     const stripped = content.replace(/<p><br><\/p>/gi, "").trim();
     return stripped === "" ? "" : content;
   }
+
+  // fetch existing experiment
+  useEffect(() => {
+    async function fetchExperiment() {
+      try {
+        const res = await fetch(`/api/admin/experiments/${id}`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to load experiment");
+        const data = await res.json();
+        console.log("Fetched experiment:", data);
+
+        setObject(data.object || "");
+        setReference(data.reference || "");
+        setMaterials(data.materials || "");
+        setTheory(data.theory || "");
+        setProcedure(data.procedure || "");
+        setObservation(data.observation || "");
+        setResult(data.result || "");
+        setChemicalReaction(data.chemicalReaction || "");
+        setCalculations(data.calculations || "");
+        setVideoUrl(data.videoUrl || "");
+      } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("An unknown error occurred");
+            }
+            }
+    }
+    if (id) fetchExperiment();
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,23 +84,21 @@ export default function AddExperimentPage() {
       formData.append("calculations", cleanHtml(calculations));
       formData.append("videoUrl", cleanHtml(videoUrl));
 
-      const response = await fetch("/api/admin/add-experiments", {
-        method: "POST",
+      const res = await fetch(`/api/admin/experiments/${id}`, {
+        method: "PUT",
         body: formData,
         credentials: "include",
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to add experiment");
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update experiment");
       } else {
-        setSuccess("Experiment added successfully!");
-        setTimeout(() => router.push("/admin/experiments"), 1500);
+        setSuccess("Experiment updated successfully!");
+        setTimeout(() => router.push(`/admin/experiments/${id}`), 1500);
       }
-    } catch (err) {
-      console.error(err);
-      setError("Network error. Please try again.");
+    } catch {
+      setError("Network error");
     } finally {
       setLoading(false);
     }
@@ -102,7 +108,7 @@ export default function AddExperimentPage() {
     <div className="min-h-screen bg-[#101A23] flex flex-col items-center px-4 py-8">
       <div className="w-full max-w-3xl bg-[#182634] rounded-lg p-6 sm:p-8 shadow-md">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#E7EDF4] mb-6 text-center">
-          Add New Experiment
+          Edit Experiment
         </h1>
 
         {error && (
@@ -118,7 +124,6 @@ export default function AddExperimentPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Object */}
           <input
             type="text"
             placeholder="Experiment Object"
@@ -128,95 +133,94 @@ export default function AddExperimentPage() {
             className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md"
           />
 
-          {/* Reference */}
+          {/* Jodit editors with existing values */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Reference</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={reference}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setReference(content)}
             />
           </div>
 
-          {/* Materials */}
           <div>
-            <label className="block text-[#E7EDF4] mb-1">Materials</label>
+            <label className="block text-[#E7EDF4] mb-1">Materials Required</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={materials}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setMaterials(content)}
-            />
+            />  
           </div>
 
-          {/* Theory */}
-          <div>
+            <div>
             <label className="block text-[#E7EDF4] mb-1">Theory</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={theory}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setTheory(content)}
             />
           </div>
 
-          {/* Procedure */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Procedure</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={procedure}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setProcedure(content)}
             />
           </div>
 
-          {/* Observation */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">Observation</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={observation}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setObservation(content)}
             />
           </div>
 
-          {/* Result */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Chemical Reaction</label>
+            <JoditEditor
+              ref={editor}
+              value={chemicalReaction}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              onBlur={(content) => setChemicalReaction(content)}
+            />  
+          </div>
+
           <div>
             <label className="block text-[#E7EDF4] mb-1">Result</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={result}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setResult(content)}
             />
           </div>
 
-          {/* Chemical Reaction */}
-          <div>
-            <label className="block text-[#E7EDF4] mb-1">Chemical Reaction</label>
-            <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
-              ref={editor}
-              value={chemicalReaction}
-              onBlur={(content) => setChemicalReaction(content)}
-            />
-          </div>
+          {/* Repeat same for  , result, calculations */}
+          {/* Example: */}
+          
 
-          {/* Calculations */}
+          
           <div>
             <label className="block text-[#E7EDF4] mb-1">Calculations</label>
             <JoditEditor
-              config={{uploader: { insertImageAsBase64URI: true }}}
               ref={editor}
               value={calculations}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
               onBlur={(content) => setCalculations(content)}
             />
           </div>
+          
+          
 
-          {/* Video URL */}
           <div>
             <label className="block text-[#E7EDF4] mb-1">YouTube Video ID</label>
             <input
@@ -228,13 +232,12 @@ export default function AddExperimentPage() {
             />
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#6286A9] hover:bg-[#4a6b8a] text-[#E7EDF4] font-semibold py-3 px-4 rounded-lg disabled:opacity-50"
           >
-            {loading ? "Adding..." : "Add Experiment"}
+            {loading ? "Updating..." : "Update Experiment"}
           </button>
         </form>
       </div>

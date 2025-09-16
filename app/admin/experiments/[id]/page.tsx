@@ -15,7 +15,7 @@ interface Experiment {
   result?: string;
   theory?: string;
   chemicalReaction?: string;
-  calculation?: string;
+  calculations?: string;
   createdAt: string;
   updatedAt?: string;
   videoUrl?: string;
@@ -51,6 +51,7 @@ export default function AdminExperimentDetail() {
     };
     fetchExperiment();
   }, [params.id, router]);
+
 
   if (loading)
     return (
@@ -92,7 +93,7 @@ export default function AdminExperimentDetail() {
     
 
   return (
-    <div className="min-h-screen bg-[#101A23] pb-20 p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-[#101A23] pb-20 p-4 sm:p-6 md:p-20 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
@@ -118,7 +119,7 @@ export default function AdminExperimentDetail() {
         {renderSection("Observation", experiment.observation)}
         {renderSection("Result", experiment.result)}
         {renderSection("Chemical Reaction", experiment.chemicalReaction)}
-        {renderSection("Calculation", experiment.calculation)}
+        {renderSection("Calculation", experiment.calculations)}
 
         {experiment.videoUrl && (
           <div className="bg-[#182634] rounded-lg shadow-sm p-6">
@@ -139,7 +140,7 @@ export default function AdminExperimentDetail() {
         </div>
 
         {/* Delete Button */}
-        <div>
+        <div className="flex gap-4 mt-6">
           <button
             onClick={async () => {
               if (!confirm("Are you sure you want to delete this experiment?"))
@@ -177,6 +178,9 @@ export default function AdminExperimentDetail() {
             className="bg-red-600 hover:bg-red-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200"
           >
             Delete Experiment
+          </button>
+          <button onClick={() => router.push(`/admin/experiments/${experiment.id}/edit`)} className="bg-blue-600 hover:bg-blue-700 text-[#E7EDF4] px-4 py-2 rounded-lg transition-colors duration-200">
+            Edit
           </button>
         </div>
       </div>

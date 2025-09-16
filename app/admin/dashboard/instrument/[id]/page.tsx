@@ -92,7 +92,7 @@ export default function AdminInstrumentDetail() {
     
 
   return (
-    <div className="min-h-screen bg-[#101A23] p-4 pb-20 sm:p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-[#101A23] p-8 pb-20 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>

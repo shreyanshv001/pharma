@@ -9,13 +9,12 @@ const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function EditInstrumentPage() {
   const router = useRouter();
-  const { id } = useParams(); // instrument id from route
+  const { id } = useParams();
   const queryClient = useQueryClient();
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // fields
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [discription, setDiscription] = useState("");
@@ -44,12 +43,13 @@ export default function EditInstrumentPage() {
 
   const editor = useRef(null);
 
-  // fetch instrument
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchInstrument() {
       try {
         const res = await fetch(`/api/admin/instruments/${id}`, {
           credentials: "include",
+          signal: controller.signal,
         });
         if (!res.ok) throw new Error("Failed to load instrument");
         const data = await res.json();
@@ -65,31 +65,30 @@ export default function EditInstrumentPage() {
         setLimitations(data.limitations || "");
         setSpecifications(data.specifications || "");
         setVideoUrl(data.videoUrl || "");
-        setExistingImages(data.images || []); // array of URLs
+        setExistingImages(data.images || []);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Error occurred");
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          setError(err instanceof Error ? err.message : "Error occurred");
+        }
       }
     }
     if (id) fetchInstrument();
+    return () => controller.abort();
   }, [id]);
 
-  // image handling
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImages([...images, ...Array.from(e.target.files)]);
-    }
-  };
+  useEffect(() => {
+    const urls = images.map((file) => URL.createObjectURL(file));
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const removeExistingImage = (index: number) => {
-    const newImgs = [...existingImages];
-    newImgs.splice(index, 1);
-    setExistingImages(newImgs);
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeNewImage = (index: number) => {
-    const newImgs = [...images];
-    newImgs.splice(index, 1);
-    setImages(newImgs);
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const editInstrumentMutation = useMutation({
@@ -101,13 +100,12 @@ export default function EditInstrumentPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update instrument");
-      console.log(data);
       return data;
     },
     onSuccess: () => {
       setSuccess("Instrument updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["admin", "instruments"] });
-      setTimeout(() => router.push(`/admin/dashboard/instrument/${id}`), 1200);
+      router.replace(`/admin/dashboard/instrument/${id}`);
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : "Error occurred");
@@ -138,8 +136,8 @@ export default function EditInstrumentPage() {
     formData.append("limitations", cleanHtml(limitations));
     formData.append("specifications", cleanHtml(specifications));
     formData.append("videoUrl", cleanHtml(videoUrl));
-    formData.append("existingImages", JSON.stringify(existingImages)); // keep
-    images.forEach((file) => formData.append("newImages", file)); // add
+    formData.append("existingImages", JSON.stringify(existingImages));
+    images.forEach((file) => formData.append("newImages", file));
 
     editInstrumentMutation.mutate(formData);
   };
@@ -180,7 +178,9 @@ export default function EditInstrumentPage() {
             required
             className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md"
           >
-            <option value="" disabled>Select Category</option>
+            <option value="" disabled>
+              Select Category
+            </option>
             {categoryOptions.map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
@@ -188,34 +188,100 @@ export default function EditInstrumentPage() {
             ))}
           </select>
 
-          {/* Editors */}
-          {([
-            ["Description", discription, setDiscription],
-            ["Principle", principle, setPrinciple],
-            ["SOP", sop, setSop],
-            ["ICH Guideline", ichGuideline, setIchGuideline],
-            ["Procedure", procedure, setProcedure],
-            ["Advantages", advantages, setAdvantages],
-            ["Limitations", limitations, setLimitations],
-            ["Specifications", specifications, setSpecifications],
-          ] as [string, string, React.Dispatch<React.SetStateAction<string>>][]).map(([label, val, setVal]) => (
-            <div key={label}>
-              <label className="block text-[#E7EDF4] mb-1">{label}</label>
-              <JoditEditor
-                ref={editor}
-                config={{ uploader: { insertImageAsBase64URI: true } }}
-                value={val}
-                onBlur={setVal}
-              />
-            </div>
-          ))}
+          {/* Description */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Description</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={discription}
+              onBlur={(newContent) => setDiscription(newContent)}
+            />
+          </div>
+
+          {/* Principle */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Principle</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={principle}
+              onBlur={(newContent) => setPrinciple(newContent)}
+            />
+          </div>
+
+          {/* SOP */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">SOP</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={sop}
+              onBlur={(newContent) => setSop(newContent)}
+            />
+          </div>
+
+          {/* ICH Guideline */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">ICH Guideline</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={ichGuideline}
+              onBlur={(newContent) => setIchGuideline(newContent)}
+            />
+          </div>
+
+          {/* Procedure */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Procedure</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={procedure}
+              onBlur={(newContent) => setProcedure(newContent)}
+            />
+          </div>
+
+          {/* Advantages */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Advantages</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={advantages}
+              onBlur={(newContent) => setAdvantages(newContent)}
+            />
+          </div>
+
+          {/* Limitations */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Limitations</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={limitations}
+              onBlur={(newContent) => setLimitations(newContent)}
+            />
+          </div>
+
+          {/* Specifications */}
+          <div>
+            <label className="block text-[#E7EDF4] mb-1">Specifications</label>
+            <JoditEditor
+              ref={editor}
+              config={{ uploader: { insertImageAsBase64URI: true } }}
+              value={specifications}
+              onBlur={(newContent) => setSpecifications(newContent)}
+            />
+          </div>
 
           {/* Video */}
           <input
             type="text"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="YouTube Video ID"
+            placeholder="YouTube Video URL"
             className="w-full bg-[#0D141C] border border-[#2a3a4a] text-[#E7EDF4] px-3 py-2 rounded-md"
           />
 
@@ -223,7 +289,10 @@ export default function EditInstrumentPage() {
           {existingImages.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
               {existingImages.map((url, index) => (
-                <div key={index} className="relative bg-[#0D141C] rounded-lg overflow-hidden border border-[#2a3a4a]">
+                <div
+                  key={index}
+                  className="relative bg-[#0D141C] rounded-lg overflow-hidden border border-[#2a3a4a]"
+                >
                   <img src={url} className="w-full h-32 object-cover" />
                   <button
                     type="button"
@@ -238,25 +307,40 @@ export default function EditInstrumentPage() {
           )}
 
           {/* New Images */}
-          <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                  setImages((prev) => [...prev, ...Array.from(files)]);
+                }
+            }}
+          />
           {images.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {images.map((file, index) => (
-                <div key={index} className="relative bg-[#0D141C] rounded-lg overflow-hidden border border-[#2a3a4a]">
-                  <img src={URL.createObjectURL(file)} className="w-full h-32 object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeNewImage(index)}
-                    className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded"
+              {images.map((file, index) => {
+                const url = URL.createObjectURL(file);
+                return (
+                  <div
+                    key={index}
+                    className="relative bg-[#0D141C] rounded-lg overflow-hidden border border-[#2a3a4a]"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <img src={url} className="w-full h-32 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(index)}
+                      className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}

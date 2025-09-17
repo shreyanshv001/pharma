@@ -1,7 +1,7 @@
 export default function AboutUsPage() {
   const teamMembers = [
     {
-      name: "Sheyansh Verma",
+      name: "Shreyansh Verma",
       role: "Full-Stack Developer",
       image: "ri-code-s-slash-line",
       description: "Passionate developer creating meaningful digital experiences with clean code, scalable architecture, and modern design."

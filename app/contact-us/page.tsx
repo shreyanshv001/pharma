@@ -1,39 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 export default function ContactUsPage() {
   const { user, isLoaded } = useUser();
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    message: ""
+    message: "",
   });
   const [buttonTrigger, setButtonTrigger] = useState("Send Message");
   const [result, setResult] = useState("");
 
-  // Auto-populate form with user data when loaded
-  useState(() => {
+  // ✅ Auto-populate form with user data
+  useEffect(() => {
     if (isLoaded && user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        email: user.primaryEmailAddress?.emailAddress || ""
+        email: user.primaryEmailAddress?.emailAddress || "",
       }));
     }
-  });
+  }, [isLoaded, user]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -41,44 +43,36 @@ export default function ContactUsPage() {
     event.preventDefault();
     setButtonTrigger("Sending...");
     setResult("Sending...");
-    
-    const formData = new FormData(event.currentTarget);
-    const accessKey = process.env.NEXT_PUBLIC_CONTACT_ACCESS_KEY; 
-    
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("first_name", formData.firstName);
+    formDataToSend.append("last_name", formData.lastName);
+    formDataToSend.append("email", formData.email);
+    formDataToSend.append("message", formData.message);
+
+    const accessKey = process.env.NEXT_PUBLIC_CONTACT_ACCESS_KEY;
+
     if (!accessKey) {
       setResult("❌ Configuration error. Please try again later.");
       setButtonTrigger("Send Message");
       return;
     }
-    
-    formData.append("access_key", accessKey);
-    
+
+    formDataToSend.append("access_key", accessKey);
+
     try {
       const response = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        body: formData,
+        body: formDataToSend,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setResult("Form Submitted Successfully 🎉");
         setButtonTrigger("Form Submitted");
-        // Reset form but keep user info
-        setFormData(prev => ({ ...prev, message: "" }));
-        event.currentTarget.reset();
-        
-        // Re-populate user fields after reset
-        if (user) {
-          setTimeout(() => {
-            setFormData(prev => ({
-              ...prev,
-              firstName: user.firstName || "",
-              lastName: user.lastName || "",
-              email: user.primaryEmailAddress?.emailAddress || ""
-            }));
-          }, 100);
-        }
+        // Reset message only, keep user info
+        setFormData((prev) => ({ ...prev, message: "" }));
       } else {
         setResult("❌ " + data.message);
         setButtonTrigger("Send Message");
@@ -93,10 +87,9 @@ export default function ContactUsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
-      
+
       <div className="relative px-4 sm:px-6 lg:px-8 pt-8 lg:pt-24 pb-32">
         <div className="max-w-4xl mx-auto">
-          
           {/* Header Section */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-800/60 rounded-full mb-6 border border-slate-700/30 shadow-2xl">
@@ -112,7 +105,6 @@ export default function ContactUsPage() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            
             {/* Contact Form */}
             <div className="bg-slate-800/60 rounded-2xl border border-slate-700/30 shadow-2xl overflow-hidden">
               <div className="p-6 bg-slate-700/30 border-b border-slate-700/30">
@@ -123,7 +115,9 @@ export default function ContactUsPage() {
                   <h2 className="text-xl font-semibold text-white">Send us a Message</h2>
                 </div>
                 <p className="text-slate-400 text-sm mt-2">
-                  {user ? "Your information has been pre-filled from your account" : "Fill out the form below and we'll get back to you"}
+                  {user
+                    ? "Your information has been pre-filled from your account"
+                    : "Fill out the form below and we'll get back to you"}
                 </p>
               </div>
 
@@ -140,7 +134,7 @@ export default function ContactUsPage() {
                       </label>
                       <Input
                         type="text"
-                        name="first_name"
+                        name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
                         placeholder="Enter your first name"
@@ -157,7 +151,7 @@ export default function ContactUsPage() {
                       </label>
                       <Input
                         type="text"
-                        name="last_name"
+                        name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
                         placeholder="Enter your last name"
@@ -226,19 +220,25 @@ export default function ContactUsPage() {
 
                   {/* Status Message */}
                   {result && (
-                    <div className={`p-4 rounded-xl border ${
-                      result.includes("Successfully") 
-                        ? "bg-green-500/10 border-green-500/30 text-green-400" 
-                        : result.includes("❌")
-                        ? "bg-red-500/10 border-red-500/30 text-red-400"
-                        : "bg-blue-500/10 border-blue-500/30 text-blue-400"
-                    }`}>
+                    <div
+                      className={`p-4 rounded-xl border ${
+                        result.includes("Successfully")
+                          ? "bg-green-500/10 border-green-500/30 text-green-400"
+                          : result.includes("❌")
+                          ? "bg-red-500/10 border-red-500/30 text-red-400"
+                          : "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                      }`}
+                    >
                       <div className="flex items-center gap-3">
-                        <i className={`text-lg ${
-                          result.includes("Successfully") ? "ri-check-circle-line" : 
-                          result.includes("❌") ? "ri-error-warning-line" :
-                          "ri-information-line"
-                        }`}></i>
+                        <i
+                          className={`text-lg ${
+                            result.includes("Successfully")
+                              ? "ri-check-circle-line"
+                              : result.includes("❌")
+                              ? "ri-error-warning-line"
+                              : "ri-information-line"
+                          }`}
+                        ></i>
                         <span className="font-medium">{result}</span>
                       </div>
                     </div>
@@ -249,7 +249,6 @@ export default function ContactUsPage() {
 
             {/* Contact Information */}
             <div className="space-y-8">
-              
               {/* Contact Methods */}
               <div className="bg-slate-800/60 rounded-xl border border-slate-700/30 shadow-xl p-8">
                 <div className="flex items-center gap-3 mb-6">
@@ -266,7 +265,7 @@ export default function ContactUsPage() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400">Email us at</p>
-                      <p className="text-white font-medium">support@yourplatform.com</p>
+                      <p className="text-white font-medium">222shreyanshverma@gmail.com</p>
                     </div>
                   </div>
 
@@ -311,7 +310,7 @@ export default function ContactUsPage() {
                       <li>• How do I report an issue?</li>
                     </ul>
                   </div>
-                  
+
                   <Link
                     href="/qa"
                     className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors duration-300 text-sm font-medium"
@@ -321,10 +320,8 @@ export default function ContactUsPage() {
                   </Link>
                 </div>
               </div>
-
             </div>
           </div>
-
         </div>
       </div>
     </div>

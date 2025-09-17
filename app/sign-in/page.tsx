@@ -2,7 +2,7 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br  lg:pb-0 from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br lg:pt-10 lg:pb-0 from-slate-950 via-slate-900 to-slate-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
       

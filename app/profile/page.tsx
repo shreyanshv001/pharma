@@ -169,7 +169,7 @@ export default function ProfilePage() {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
               <div className="mb-8">
                 <div className="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-2 shadow-xl">
-                  <div className="flex">
+                  <div className="flex flex-col sm:flex-row">
                     {(["questions", "answers", "comments"] as const).map((tab) => (
                       <button
                         key={tab}

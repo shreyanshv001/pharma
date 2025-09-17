@@ -4,7 +4,7 @@ export default function AboutUsPage() {
       name: "Sheyansh Verma",
       role: "Full-Stack Developer",
       image: "ri-code-s-slash-line",
-      description: "Passionate developers creating meaningful digital experiences with clean code, scalable architecture, and modern design."
+      description: "Passionate developer creating meaningful digital experiences with clean code, scalable architecture, and modern design."
     },
     {
       name: "Pooja Lodhi",
@@ -73,7 +73,7 @@ export default function AboutUsPage() {
           <div className="mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8">Meet Our Team</h2>
             
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="flex justify-center items-center gap-8">
               {teamMembers.map((member, index) => (
                 <div 
                   key={index}

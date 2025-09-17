@@ -14,12 +14,16 @@ export default function ResponsiveNav() {
     { href: "/experiment", icon: "ri-flask-line", label: "Experiments" },
     { href: "/qa", icon: "ri-question-answer-line", label: "Q&A" },
     { href: "/profile", icon: "ri-user-line", label: "Profile" },
+    { href: "/contact-us", icon: "ri-contacts-line", label: "Contact Us" },
+    { href: "/about-us", icon: "ri-information-line", label: "About" }
   ];
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/" || pathname.startsWith("/instrument");
     if (href === "/experiment") return pathname === "/experiment" || pathname.startsWith("/experiment/");
     if (href === "/profile") return pathname === "/profile" || pathname.startsWith("/profile/");
+    if (href === "/contact-us") return pathname === "/contact-us" || pathname.startsWith("/contact-us/");
+    if (href === "/about-us") return pathname === "/about-us" || pathname.startsWith("/about-us/");
     return pathname === href || pathname.startsWith(href + "/");
   };
 
@@ -41,7 +45,7 @@ export default function ResponsiveNav() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.02)_1px,transparent_0)] [background-size:20px_20px]"></div>
         
         <div className="relative flex gap-8">
-          {navItems.slice(0, 3).map((item) => (
+          {navItems.map((item, idx) => (
             <Link
               key={item.href}
               href={item.href}
@@ -123,7 +127,7 @@ export default function ResponsiveNav() {
               }}
             />
             
-            {navItems.map((item, index) => (
+            {navItems.slice(0, 4).map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}

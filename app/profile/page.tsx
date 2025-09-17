@@ -234,7 +234,7 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              <div className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-6 shadow-xl">
+              <div className="bg-slate-800/40 border block lg:hidden border-slate-700/30 rounded-xl p-6 shadow-xl">
                 <div className="flex justify-center gap-6">
                   <Link href="/about-us" className="text-slate-400 hover:text-blue-400 transition-colors">
                     About Us

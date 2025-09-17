@@ -4,7 +4,7 @@ export default function AboutUsPage() {
       name: "Sheyansh Verma",
       role: "Full-Stack Developer",
       image: "ri-code-s-slash-line",
-      description: "Passionate developers creating meaningful digital experiences with clean code, scalable architecture, and modern design."
+      description: "Passionate developer creating meaningful digital experiences with clean code, scalable architecture, and modern design."
     },
     {
       name: "Pooja Lodhi",
@@ -15,7 +15,7 @@ export default function AboutUsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 py-8 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br lg:pt-25 from-slate-950 via-slate-900 py-8 to-slate-950">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
       
@@ -73,7 +73,7 @@ export default function AboutUsPage() {
           <div className="mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8">Meet Our Team</h2>
             
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
               {teamMembers.map((member, index) => (
                 <div 
                   key={index}

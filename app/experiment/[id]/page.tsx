@@ -71,7 +71,7 @@ const CollapsibleSection = ({
         }`}
       >
         <div
-          className="p-6 table-styles text-slate-300 leading-relaxed prose prose-invert max-w-none"
+          className="py-6 px-4 lg:px-6 table-styles text-slate-300 leading-relaxed text-lg prose prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>

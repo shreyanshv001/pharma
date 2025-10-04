@@ -67,9 +67,17 @@ export async function POST(req: Request) {
       throw new Error("Image upload failed: " + message);
     }
 
-    // Ensure local uploads dir exists (for fallback)
+    // Local fallback only in development (prod/serverless FS is read-only)
+    const localFallbackEnabled = process.env.NODE_ENV !== "production";
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
+    if (localFallbackEnabled) {
+      try {
+        await mkdir(uploadsDir, { recursive: true });
+      } catch (e) {
+        // Ignore mkdir errors in dev; we'll throw later if we actually try to use local fallback
+        console.warn("Could not ensure local uploads dir:", e);
+      }
+    }
 
     // Helper: local fallback save
     async function saveLocally(file: File, i: number): Promise<string> {
@@ -91,10 +99,15 @@ export async function POST(req: Request) {
         const url = await uploadWithRetry("instruments", uploadPath, file);
         imageUrls.push(url);
       } catch {
-        // Fallback to local storage
-        const localUrl = await saveLocally(file, i);
-        console.warn("Supabase upload failed, saved locally:", localUrl);
-        imageUrls.push(localUrl);
+        if (localFallbackEnabled) {
+          // Fallback to local storage (development only)
+          const localUrl = await saveLocally(file, i);
+          console.warn("Supabase upload failed, saved locally:", localUrl);
+          imageUrls.push(localUrl);
+        } else {
+          // In production, rethrow so the request fails cleanly (no partial writes)
+          throw new Error("Image upload failed and local storage is not available in production.");
+        }
       }
     }
 

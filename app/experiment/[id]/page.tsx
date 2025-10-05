@@ -113,7 +113,7 @@ const CollapsibleSection = ({
       <div ref={containerRef} style={containerStyle} className="transition-all duration-500 ease-out">
         <div
           ref={innerRef}
-          className="py-6 px-4 lg:px-6 table-styles text-slate-300  leading-relaxed text-lg prose prose-invert max-w-none"
+          className="py-6 px-4 lg:px-6 table-styles text-slate-300 text-justify leading-relaxed text-lg prose prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>

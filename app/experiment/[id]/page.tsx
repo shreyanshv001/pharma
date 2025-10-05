@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import YouTubePlayer from "@/components/YoutubePlayer";
@@ -40,8 +40,55 @@ const CollapsibleSection = ({
   icon?: string;
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [maxHeight, setMaxHeight] = useState<string | number>(isOpen ? "none" : 0);
 
-  if (!content) return null;
+  // Measure content height and animate max-height for smooth expand/collapse
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    const update = () => {
+      if (!el) return;
+      if (isOpen) {
+        // set explicit px height to enable transition
+        setMaxHeight(el.scrollHeight + 16); // small padding
+        // after animation, remove max-height restriction to allow natural flow
+        timeout = setTimeout(() => setMaxHeight("none"), 500);
+      } else {
+        // when closing, set to current height then to 0 so transition runs
+        setMaxHeight(el.scrollHeight + 16);
+        // next frame collapse
+        requestAnimationFrame(() => setMaxHeight(0));
+      }
+    };
+
+    update();
+
+    // watch for content resize (images, rich text)
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [isOpen, content]);
+
+  // Don't render section when there's no content
+  if (!content || !content.trim()) return null;
+
+  const containerStyle: React.CSSProperties = {
+    maxHeight: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
+    transition: "max-height 500ms ease",
+    overflow: maxHeight === "none" ? "visible" : "hidden",
+    opacity: isOpen ? 1 : 0,
+  };
 
   return (
     <div className="bg-slate-800/60 rounded-xl overflow-hidden border border-slate-700/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/5 hover:border-blue-500/20">
@@ -63,15 +110,10 @@ const CollapsibleSection = ({
           }`}
         ></i>
       </button>
-      <div
-        className={`transition-all duration-500 ease-out ${
-          isOpen
-            ? "max-h-[2000px] opacity-100"
-            : "max-h-0 opacity-0 overflow-hidden"
-        }`}
-      >
+      <div ref={containerRef} style={containerStyle} className="transition-all duration-500 ease-out">
         <div
-          className="py-6 px-4 lg:px-6 table-styles text-slate-300 leading-relaxed text-lg prose prose-invert max-w-none"
+          ref={innerRef}
+          className="py-6 px-4 lg:px-6 table-styles text-slate-300  leading-relaxed text-lg prose prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>

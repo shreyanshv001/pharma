@@ -65,7 +65,7 @@ export default function EditInstrumentPage() {
         setLimitations(data.limitations || "");
         setSpecifications(data.specifications || "");
         setVideoUrl(data.videoUrl || "");
-        setExistingImages(data.images || []);
+        setExistingImages(data.imageUrls || []);
       } catch (err: unknown) {
         if (!(err instanceof DOMException && err.name === "AbortError")) {
           setError(err instanceof Error ? err.message : "Error occurred");

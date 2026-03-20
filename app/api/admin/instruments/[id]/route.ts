@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { Prisma, Category } from '@prisma/client';
-import path from "path/win32";
+import path from "path";
 import { writeFile } from "fs/promises";
 
 async function verifyAuth(req: NextRequest) {

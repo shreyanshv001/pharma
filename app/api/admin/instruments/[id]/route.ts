@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { Prisma, Category } from '@prisma/client';
+import { createClient } from "@supabase/supabase-js";
 import path from "path";
-import { writeFile } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 
 async function verifyAuth(req: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const { id } =await params;
+  const { id } = await params;
 
   // ✅ Verify auth
   const auth = await verifyAuth(req);
@@ -59,6 +60,17 @@ export async function PUT(
 
   try {
     const formData = await req.formData();
+
+    // ✅ Supabase setup
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase credentials in environment variables.");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    const sb = createClient(supabaseUrl, supabaseKey);
 
     // Extract fields
     const name = formData.get("name") as string;
@@ -73,17 +85,65 @@ export async function PUT(
     const specifications = formData.get("specifications") as string;
     const videoUrl = formData.get("videoUrl") as string;
 
+    // ✅ Upload to Supabase Storage
+    async function uploadToSupabase(bucket: string, file: File, index: number) {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `images/${Date.now()}-${index}-${safeName}`;
+
+      const { data, error } = await sb.storage
+        .from(bucket)
+        .upload(filePath, buffer, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType:
+            typeof file.type === "string" && file.type.length > 0
+              ? file.type
+              : "application/octet-stream",
+        });
+
+      if (error) throw new Error(error.message);
+
+      const { data: publicUrl } = sb.storage.from(bucket).getPublicUrl(filePath);
+      return publicUrl.publicUrl;
+    }
+
+    // ✅ Local fallback (development only)
+    const localFallback = process.env.NODE_ENV !== "production";
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+
+    if (localFallback) await mkdir(uploadsDir, { recursive: true });
+
+    async function saveLocally(file: File, i: number): Promise<string> {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filename = `${Date.now()}-${i}-${safeName}`;
+      const filePath = path.join(uploadsDir, filename);
+      await writeFile(filePath, buffer);
+      return `/uploads/${filename}`;
+    }
+
     // Handle new image uploads (from "newImages")
-    const newFiles = formData.getAll("newImages") as File[];
+    const newFiles = formData.getAll("newImages").filter((f): f is File => f instanceof File);
     const uploadedImages: string[] = [];
 
-    if (newFiles.length > 0) {
-      for (const file of newFiles) {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `${Date.now()}-${file.name}`;
-        const filePath = path.join(process.cwd(), "public/uploads", filename);
-        await writeFile(filePath, buffer);
-        uploadedImages.push(`/uploads/${filename}`);
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
+      try {
+        const url = await uploadToSupabase("instruments", file, i);
+        uploadedImages.push(url);
+      } catch (err) {
+        console.error("Supabase upload failed:", err);
+        if (localFallback) {
+          const localUrl = await saveLocally(file, i);
+          console.warn("Saved locally:", localUrl);
+          uploadedImages.push(localUrl);
+        } else {
+          throw new Error("Image upload failed in production.");
+        }
       }
     }
 
@@ -125,7 +185,11 @@ export async function PUT(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Update error:", error);
+    if (error instanceof Error) {
+      console.error(`Update error [${error.name}]: ${error.message}\n${error.stack}`);
+    } else {
+      console.error("Update error (unknown):", error);
+    }
     return NextResponse.json(
       { error: "Failed to update instrument" },
       { status: 500 }

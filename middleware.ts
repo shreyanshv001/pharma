@@ -4,8 +4,8 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    // Protect everything except Next.js internals & static files
-    "/((?!_next|.*\\..*).*)",
+    // Ignore Next.js internals, static files, and admin API routes (large uploads)
+    "/((?!_next|.*\\..*|api/admin).*)",
 
     // Explicitly allow Clerk routes
     "/sign-in(.*)",

@@ -4,6 +4,11 @@ const nextConfig = {
   images: {
     domains: ['vhuxxrogqmbcqoisdkse.supabase.co', 'img.clerk.com'],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+  },
 };
 
 module.exports = nextConfig;
